@@ -5917,6 +5917,11 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
         let envinner,_,vspecMap = MakeAndPublishSimpleVals cenv env m names true
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy cenv.g v.Type, v)
         let envinner = if isMember then envinner else ExitFamilyRegion envinner
+        // peel off single wildcard match
+        let bodyExpr =
+            match bodyExpr with
+            | SynExpr.Match(_, _, [Clause(SynPat.Wild _, None, e, _m, _sp)], _, _) -> e
+            | e -> e
         let bodyExpr,tpenv = TcIteratedLambdas cenv false envinner resultTy takenNames tpenv bodyExpr
         // See bug 5758: Non-monontonicity in inference: need to ensure that parameters are never inferred to have byref type, instead it is always declared
         byrefs  |> Map.iter (fun _ (orig,v) -> 
