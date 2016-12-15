@@ -11,10 +11,10 @@ type layout = Internal.Utilities.StructuredFormat.Layout
 val emptyL                : Layout
 val isEmptyL              : Layout -> bool
   
-val wordL                 : string -> Layout
-val sepL                  : string -> Layout
-val rightL                : string -> Layout
-val leftL                 : string -> Layout
+val wordL                 : TaggedText -> Layout
+val sepL                  : TaggedText -> Layout
+val rightL                : TaggedText -> Layout
+val leftL                 : TaggedText -> Layout
 
 val ( ^^ )                : Layout -> Layout -> Layout   (* never break "glue" *)
 val ( ++ )                : Layout -> Layout -> Layout   (* if break, indent=0 *)
@@ -48,7 +48,7 @@ val bufferL               : StringBuilder -> Layout -> unit
 /// render a Layout yielding an 'a using a 'b (hidden state) type 
 type LayoutRenderer<'a,'b> =
     abstract Start    : unit -> 'b
-    abstract AddText  : 'b -> string -> 'b
+    abstract AddText  : 'b -> TaggedText -> 'b
     abstract AddBreak : 'b -> int -> 'b
     abstract AddTag   : 'b -> string * (string * string) list * bool -> 'b
     abstract Finish   : 'b -> 'a
@@ -63,4 +63,5 @@ val renderL  : LayoutRenderer<'b,'a> -> Layout -> 'b
 val stringR  : LayoutRenderer<string,string list>
 val channelR : TextWriter -> LayoutRenderer<NoResult,NoState>
 val bufferR  : StringBuilder -> LayoutRenderer<NoResult,NoState>
+val taggedTextListR  : LayoutRenderer<list<TaggedText>, list<TaggedText>>
 

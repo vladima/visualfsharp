@@ -18,17 +18,19 @@ let spaces n = new String(' ',n)
 //--------------------------------------------------------------------------
 
 let rec juxtLeft = function
+  | ObjLeaf (jl,_text,_jr)         -> jl
   | Leaf (jl,_text,_jr)            -> jl
   | Node (jl,_l,_jm,_r,_jr,_joint) -> jl
   | Attr (_tag,_attrs,l)           -> juxtLeft l
 
 let rec juxtRight = function
+  | ObjLeaf (_jl,_text,jr)         -> jr
   | Leaf (_jl,_text,jr)            -> jr
   | Node (_jl,_l,_jm,_r,jr,_joint) -> jr
   | Attr (_tag,_attrs,l)           -> juxtRight l
 
 // NOTE: emptyL might be better represented as a constructor, so then (Sep"") would have true meaning
-let emptyL = Leaf (true,box "",true)
+let emptyL = Leaf (true,TaggedText.Text "",true)
 let isEmptyL = function Leaf(true,tag,true) when unbox tag = "" -> true | _ -> false
       
 let mkNode l r joint =
@@ -44,10 +46,10 @@ let mkNode l r joint =
 //INDEX: constructors
 //--------------------------------------------------------------------------
 
-let wordL  (str:string) = Leaf (false,box str,false)
-let sepL   (str:string) = Leaf (true ,box str,true)   
-let rightL (str:string) = Leaf (true ,box str,false)   
-let leftL  (str:string) = Leaf (false,box str,true)
+let wordL  (str:TaggedText) = Leaf (false,str,false)
+let sepL   (str:TaggedText) = Leaf (true ,str,true)   
+let rightL (str:TaggedText) = Leaf (true ,str,false)   
+let leftL  (str:TaggedText) = Leaf (false,str,true)
 
 let aboveL  l r = mkNode l r (Broken 0)
 
@@ -79,23 +81,23 @@ let tagListL tagger = function
       | y::ys -> process' ((tagger prefixL) ++ y) ys in
       process' x xs
     
-let commaListL x = tagListL (fun prefixL -> prefixL ^^ rightL ",") x
-let semiListL x  = tagListL (fun prefixL -> prefixL ^^ rightL ";") x
+let commaListL x = tagListL (fun prefixL -> prefixL ^^ rightL (TaggedText.Punctuation ",")) x
+let semiListL x  = tagListL (fun prefixL -> prefixL ^^ rightL (TaggedText.Punctuation ";")) x
 let spaceListL x = tagListL (fun prefixL -> prefixL) x
 let sepListL x y = tagListL (fun prefixL -> prefixL ^^ x) y
 
-let bracketL l = leftL "(" ^^ l ^^ rightL ")"
-let tupleL xs = bracketL (sepListL (sepL ",") xs)
+let bracketL l = leftL (TaggedText.Punctuation "(") ^^ l ^^ rightL (TaggedText.Punctuation ")")
+let tupleL xs = bracketL (sepListL (sepL (TaggedText.Punctuation ",")) xs)
 let aboveListL = function
   | []    -> emptyL
   | [x]   -> x
   | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
 
 let optionL xL = function
-  | None   -> wordL "None"
-  | Some x -> wordL "Some" -- (xL x)
+  | None   -> wordL (TaggedText.Identifier "None")
+  | Some x -> wordL (TaggedText.Identifier "Some") -- (xL x)
 
-let listL xL xs = leftL "[" ^^ sepListL (sepL ";") (List.map xL xs) ^^ rightL "]"
+let listL xL xs = leftL (TaggedText.Punctuation "[") ^^ sepListL (sepL (TaggedText.Punctuation ";")) (List.map xL xs) ^^ rightL (TaggedText.Punctuation "]")
 
 
 //--------------------------------------------------------------------------
@@ -157,12 +159,13 @@ let squashTo maxWidth layout =
        (*printf "\n\nCalling pos=%d layout=[%s]\n" pos (showL layout)*)
        let breaks,layout,pos,offset =
            match layout with
+           | ObjLeaf _ -> failwith "ObjLeaf should not appear here"
            | Attr (tag,attrs,l) ->
                let breaks,layout,pos,offset = fit breaks (pos,l) 
                let layout = Attr (tag,attrs,layout) 
                breaks,layout,pos,offset
            | Leaf (_jl,text,_jr) ->
-               let textWidth = (unbox<string> text).Length 
+               let textWidth = text.Length 
                let rec fitLeaf breaks pos =
                  if pos + textWidth <= maxWidth then
                    breaks,layout,pos + textWidth,textWidth (* great, it fits *)
@@ -215,7 +218,7 @@ let squashTo maxWidth layout =
 
 type LayoutRenderer<'a,'b> =
     abstract Start    : unit -> 'b
-    abstract AddText  : 'b -> string -> 'b
+    abstract AddText  : 'b -> TaggedText -> 'b
     abstract AddBreak : 'b -> int -> 'b
     abstract AddTag   : 'b -> string * (string * string) list * bool -> 'b
     abstract Finish   : 'b -> 'a
@@ -223,9 +226,10 @@ type LayoutRenderer<'a,'b> =
 let renderL (rr: LayoutRenderer<_,_>) layout =
     let rec addL z pos i layout k = 
       match layout with
+      | ObjLeaf _ -> failwith "ObjLeaf should never apper here"
         (* pos is tab level *)
       | Leaf (_,text,_)                 -> 
-          k(rr.AddText z (unbox text),i + (unbox<string> text).Length)
+          k(rr.AddText z text,i + text.Length)
       | Node (_,l,_,r,_,Broken indent) -> 
           addL z pos i l <|
             fun (z,_i) ->
@@ -234,7 +238,7 @@ let renderL (rr: LayoutRenderer<_,_>) layout =
       | Node (_,l,jm,r,_,_)             -> 
           addL z pos i l <|
             fun (z, i) ->
-              let z,i = if jm then z,i else rr.AddText z " ",i+1 
+              let z,i = if jm then z,i else rr.AddText z (TaggedText.Text " "),i+1 
               let pos = i 
               addL z pos i r k
       | Attr (tag,attrs,l)                -> 
@@ -252,10 +256,20 @@ let renderL (rr: LayoutRenderer<_,_>) layout =
 let stringR =
   { new LayoutRenderer<string,string list> with 
       member x.Start () = []
-      member x.AddText rstrs text = text::rstrs
+      member x.AddText rstrs text = text.Value::rstrs
       member x.AddBreak rstrs n = (spaces n) :: "\n" ::  rstrs 
       member x.AddTag z (_,_,_) = z
       member x.Finish rstrs = String.Join("",Array.ofList (List.rev rstrs)) }
+
+/// string render 
+let taggedTextListR =
+  { new LayoutRenderer<list<TaggedText>, list<TaggedText>> with 
+      member x.Start () = []
+      member x.AddText rstrs text =  text::rstrs
+      member x.AddBreak rstrs n = TaggedText.Text (spaces n) :: TaggedText.Text "\n" ::  rstrs 
+      member x.AddTag z (_,_,_) = z
+      member x.Finish rstrs = List.rev rstrs }
+
 
 type NoState = NoState
 type NoResult = NoResult
@@ -273,7 +287,7 @@ let channelR (chan:TextWriter) =
 let bufferR os =
   { new LayoutRenderer<NoResult,NoState> with 
       member r.Start () = NoState
-      member r.AddText z s = bprintf os "%s" s; z
+      member r.AddText z s = bprintf os "%s" s.Value; z
       member r.AddBreak z n = bprintf os "\n"; bprintf os "%s" (spaces n); z
       member r.AddTag z (tag,attrs,start) = z
       member r.Finish z = NoResult }

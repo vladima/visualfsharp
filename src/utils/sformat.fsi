@@ -53,6 +53,31 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | Breakable of int
         | Broken of int
 
+#if COMPILER
+    type internal TaggedText =
+#else
+    type TaggedText =
+#endif
+        | Keyword of string
+        | Identifier of string
+        | Text of string
+        | String of string
+        | Punctuation of string
+        | Number of string
+        | Type of string
+        with 
+        member Value: string
+        member Length: int
+        static member GetText: t: TaggedText -> string
+    
+#if COMPILER
+    type internal TaggedTextWriter =
+#else
+    type TaggedTextWriter =
+#endif
+        abstract Write: t: TaggedText -> unit
+        abstract WriteLine: unit -> unit
+
     /// Data representing structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
     [<NoEquality; NoComparison>]
@@ -61,7 +86,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #else
     type Layout =
 #endif
-     | Leaf of bool * obj * bool
+     | ObjLeaf of bool * obj * bool
+     | Leaf of bool * TaggedText * bool
      | Node of bool * Layout * bool * Layout * bool * Joint
      | Attr of string * (string * string) list * Layout
 #endif
@@ -113,13 +139,13 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         val objL       : value:obj -> Layout
 
         /// An string leaf 
-        val wordL      : text:string -> Layout
+        val wordL      : text:TaggedText -> Layout
         /// An string which requires no spaces either side.
-        val sepL       : text:string -> Layout
+        val sepL       : text:TaggedText -> Layout
         /// An string which is right parenthesis (no space on the left).
-        val rightL     : text:string -> Layout
+        val rightL     : text:TaggedText -> Layout
         /// An string which is left  parenthesis (no space on the right).
-        val leftL      : text:string -> Layout
+        val leftL      : text:TaggedText -> Layout
 
         /// Join, unbreakable. 
         val ( ^^ )     : layout1:Layout -> layout2:Layout -> Layout   
@@ -265,8 +291,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         val anyToStringForPrintf: options:FormatOptions -> bindingFlags:System.Reflection.BindingFlags -> value:'T * Type -> string
 #endif
 #else
+        val asTaggedTextWriter: writer: TextWriter -> TaggedTextWriter
         val any_to_layout   : options:FormatOptions -> value:'T * Type -> Layout
         val squash_layout   : options:FormatOptions -> layout:Layout -> Layout
+        val output_layout_tagged   : options:FormatOptions -> writer:TaggedTextWriter -> layout:Layout -> unit
         val output_layout   : options:FormatOptions -> writer:TextWriter -> layout:Layout -> unit
         val layout_as_string: options:FormatOptions -> value:'T * Type -> string
 #endif
