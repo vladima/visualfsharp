@@ -59,23 +59,23 @@ type FSharpXmlDoc =
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
-type FSharpToolTipElement = 
+type FSharpToolTipElement<'T> = 
     | None
     /// A single type, method, etc with comment.
-    | Single of (* text *) string * FSharpXmlDoc
+    | Single of (* text *) 'T * FSharpXmlDoc
     /// A single parameter, with the parameter name.
-    | SingleParameter of (* text *) string * FSharpXmlDoc * string
+    | SingleParameter of (* text *) 'T * FSharpXmlDoc * string
     /// For example, a method overload group.
-    | Group of ((* text *) string * FSharpXmlDoc) list
+    | Group of ((* text *) 'T * FSharpXmlDoc) list
     /// An error occurred formatting this element
     | CompositionError of string
 
 /// Information for building a data tip box.
 //
 // Note: this type does not hold any handles to compiler data structure.
-type FSharpToolTipText = 
+type FSharpToolTipText<'T> = 
     /// A list of data tip elements to display.
-    | FSharpToolTipText of FSharpToolTipElement list  
+    | FSharpToolTipText of FSharpToolTipElement<'T> list  
 
 
 [<AutoOpen>]
@@ -86,13 +86,19 @@ module internal ItemDescriptionsImpl =
         isFunTy g tau 
 
      
-    let OutputFullName isDecl ppF fnF os r = 
+    let OutputFullName isDecl ppF fnF r = 
       // Only display full names in quick info, not declaration text
       if not isDecl then 
         match ppF r with 
-        | None -> ()
+        | None -> emptyL
         | Some _ -> 
-            bprintf os "\n\n%s: %s" (FSComp.SR.typeInfoFullName()) (fnF r)
+            wordL (tagText "\n\n") ^^
+            wordL (tagIdentifier (FSComp.SR.typeInfoFullName())) ^^
+            wordL (tagPunctuation ":") ^^
+            wordL (tagText " ") ^^
+            (fnF r)
+       else emptyL
+            //bprintf os "\n\n%s: %s" (FSComp.SR.typeInfoFullName()) (fnF r)
           
     let rangeOfValRef preferFlag (vref:ValRef) =
         match preferFlag with 
@@ -427,18 +433,19 @@ module internal ItemDescriptionsImpl =
         GetXmlCommentForItemAux (if minfo.HasDirectXmlComment then Some minfo.XmlDoc else None) infoReader m d 
 
     /// Output a method info
-    let FormatOverloadsToList (infoReader:InfoReader) m denv d minfos : FSharpToolTipElement = 
-        let formatOne minfo = 
-            let text = bufs (fun os -> NicePrint.formatMethInfoToBufferFreeStyle  infoReader.amap m denv os minfo)
+    let FormatOverloadsToList (infoReader:InfoReader) m denv d minfos : FSharpToolTipElement<_> = 
+        let layoutOne minfo = 
+            let layout = NicePrint.layoutMethInfoFreeStyle infoReader.amap m denv minfo
+            //let text = bufs (fun os -> NicePrint.formatMethInfoToBufferFreeStyle  infoReader.amap m denv os minfo)
             let xml = GetXmlCommentForMethInfoItem infoReader m d minfo
-            text,xml
+            layout,xml
 
         ToolTipFault |> Option.iter (fun msg -> 
            let exn = Error((0,msg),range.Zero)
            let ph = PhasedError.Create(exn, BuildPhase.TypeCheck)
            phasedError ph)
  
-        FSharpToolTipElement.Group(minfos |> List.map formatOne)
+        FSharpToolTipElement.Group(minfos |> List.map layoutOne)
 
         
     let pubpath_of_vref         (v:ValRef) = v.PublicPath        
@@ -716,12 +723,15 @@ module internal ItemDescriptionsImpl =
             // operator with solution
             FormatItemDescriptionToToolTipElement isDecl infoReader m denv (Item.Value vref)
         | Item.Value vref | Item.CustomBuilder (_,vref) ->            
-            let text = 
-                bufs (fun os -> 
-                    NicePrint.outputQualifiedValOrMember denv os vref.Deref 
-                    OutputFullName isDecl pubpath_of_vref fullDisplayTextOfValRef os vref)
+            let layout = 
+                NicePrint.layoutQualifiedValOrMember denv vref.Deref ^^
+                OutputFullName isDecl pubpath_of_vref fullDisplayTextOfValRefAsLayout vref
+            //let text = 
+            //    bufs (fun os -> 
+            //        NicePrint.outputQualifiedValOrMember denv os vref.Deref 
+            //        OutputFullName isDecl pubpath_of_vref fullDisplayTextOfValRef os vref)
 
-            FSharpToolTipElement.Single(text, xml)
+            FSharpToolTipElement.Single(layout, xml)
 
         // Union tags (constructors)
         | Item.UnionCase(ucinfo,_) -> 

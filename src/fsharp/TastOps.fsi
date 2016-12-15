@@ -655,6 +655,7 @@ type DisplayEnv =
 val fullDisplayTextOfModRef : ModuleOrNamespaceRef -> string
 val fullDisplayTextOfParentOfModRef : ModuleOrNamespaceRef -> string option
 val fullDisplayTextOfValRef   : ValRef -> string
+val fullDisplayTextOfValRefAsLayout   : ValRef -> StructuredFormat.Layout
 val fullDisplayTextOfTyconRef  : TyconRef -> string
 val fullDisplayTextOfExnRef  : TyconRef -> string
 val fullDisplayTextOfUnionCaseRef  : UnionCaseRef -> string

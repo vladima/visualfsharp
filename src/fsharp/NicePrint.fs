@@ -1936,12 +1936,14 @@ let dataExprL denv expr = PrintData.dataExprL denv expr
 let outputValOrMember denv os x    = x |> PrintTastMemberOrVals.layoutValOrMember denv |> bufferL os
 let stringValOrMember denv x    = x |> PrintTastMemberOrVals.layoutValOrMember denv |> showL
 /// Print members with a qualification showing the type they are contained in 
+let layoutQualifiedValOrMember denv v = PrintTastMemberOrVals.layoutValOrMember { denv with showMemberContainers=true; } v
 let outputQualifiedValOrMember denv os v = outputValOrMember { denv with showMemberContainers=true; } os v
 let outputQualifiedValSpec denv os v = outputQualifiedValOrMember denv os v
 let stringOfQualifiedValOrMember denv v = PrintTastMemberOrVals.layoutValOrMember { denv with showMemberContainers=true; } v |> showL
         
 /// Convert a MethInfo to a string
 let formatMethInfoToBufferFreeStyle amap m denv buf d = InfoMemberPrinting.formatMethInfoToBufferFreeStyle amap m denv buf d
+let layoutMethInfoFreeStyle amap m denv d = InfoMemberPrinting.layoutMethInfoToFreeStyle amap m denv d
 
 /// Convert a MethInfo to a string
 let stringOfMethInfo amap m denv d = bufs (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle amap m denv buf d)

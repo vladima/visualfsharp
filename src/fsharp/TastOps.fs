@@ -2471,16 +2471,30 @@ type DisplayEnv =
 
 let (+.+) s1 s2 = (if s1 = "" then s2 else s1+"."+s2)
 
+let layoutOfPath p =     
+    let sep = wordL (tagPunctuation ".")
+    sepListL sep (List.map (tagIdentifier >> wordL) p)
+
 let fullNameOfParentOfPubPath pp = 
     match pp with 
     | PubPath([| _ |]) -> None 
     | pp -> Some(textOfPath (Array.toList pp.EnclosingPath))
 
+let fullNameOfParentOfPubPathAsLayout pp = 
+    match pp with 
+    | PubPath([| _ |]) -> None 
+    | pp -> Some(layoutOfPath (Array.toList pp.EnclosingPath))
+
 let fullNameOfPubPath (PubPath(p)) = textOfPath (Array.toList p) 
+let fullNameOfPubPathAsLayout (PubPath(p)) = layoutOfPath (Array.toList p)
 
 let fullNameOfParentOfNonLocalEntityRef (nlr: NonLocalEntityRef) = 
     if nlr.Path.Length = 0 || nlr.Path.Length = 1 then None
     else Some (textOfArrPath nlr.EnclosingMangledPath)  // <--- BAD BAD BAD: this is a mangled path. This is wrong for nested modules
+
+let fullNameOfParentOfNonLocalEntityRefAsLayout (nlr: NonLocalEntityRef) = 
+    if nlr.Path.Length = 0 || nlr.Path.Length = 1 then None
+    else Some (layoutOfPath (List.ofArray nlr.EnclosingMangledPath))  // <--- BAD BAD BAD: this is a mangled path. This is wrong for nested modules
 
 let fullNameOfParentOfEntityRef eref = 
     match eref with 
@@ -2490,11 +2504,28 @@ let fullNameOfParentOfEntityRef eref =
          | Some ppath -> fullNameOfParentOfPubPath ppath
     | ERefNonLocal nlr -> fullNameOfParentOfNonLocalEntityRef nlr
 
+let fullNameOfParentOfEntityRefAsLayout eref = 
+    match eref with 
+    | ERefLocal x ->
+         match x.PublicPath with 
+         | None -> None
+         | Some ppath -> fullNameOfParentOfPubPathAsLayout ppath
+    | ERefNonLocal nlr -> fullNameOfParentOfNonLocalEntityRefAsLayout nlr
+
 let fullNameOfEntityRef nmF xref = 
     match fullNameOfParentOfEntityRef xref  with 
     | None -> nmF xref 
     | Some pathText -> pathText +.+ nmF xref
-  
+
+let fullNameOfEntityRefAsLayout nmF xref = 
+    let n = wordL (tagIdentifier (nmF xref))
+    match fullNameOfParentOfEntityRefAsLayout xref  with 
+    | None -> n
+    | Some pathText -> 
+        pathText ^^
+        wordL (tagPunctuation ".") ^^
+        n
+
 let fullNameOfParentOfValRef vref = 
     match vref with 
     | VRefLocal x -> 
@@ -2503,6 +2534,16 @@ let fullNameOfParentOfValRef vref =
          | Some (ValPubPath(pp,_)) -> Some(fullNameOfPubPath pp)
     | VRefNonLocal nlr -> 
         Some (fullNameOfEntityRef (fun (x:EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
+
+let fullNameOfParentOfValRefAsLayout vref = 
+    match vref with 
+    | VRefLocal x -> 
+         match x.PublicPath with 
+         | None -> None
+         | Some (ValPubPath(pp,_)) -> Some(fullNameOfPubPathAsLayout pp)
+    | VRefNonLocal nlr -> 
+        Some (fullNameOfEntityRefAsLayout (fun (x:EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
+
 
 let fullDisplayTextOfParentOfModRef r = fullNameOfParentOfEntityRef r 
 
@@ -2517,6 +2558,15 @@ let fullDisplayTextOfValRef   (vref:ValRef) =
     match fullNameOfParentOfValRef   vref  with 
     | None -> vref.DisplayName 
     | Some pathText -> pathText +.+ vref.DisplayName
+
+let fullDisplayTextOfValRefAsLayout   (vref:ValRef) = 
+    match fullNameOfParentOfValRefAsLayout vref  with 
+    | None -> wordL (tagIdentifier vref.DisplayName) 
+    | Some pathText -> 
+        pathText ^^
+        wordL (tagPunctuation ".") ^^
+        wordL (tagIdentifier vref.DisplayName)
+        //pathText +.+ vref.DisplayName
 
 
 let fullMangledPathToTyconRef (tcref:TyconRef) = 
