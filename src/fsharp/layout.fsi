@@ -16,7 +16,14 @@ val wordL                 : TaggedText -> Layout
 val sepL                  : TaggedText -> Layout
 val rightL                : TaggedText -> Layout
 val leftL                 : TaggedText -> Layout
-
+val tagKeyword:     s: string -> TaggedText
+val tagIdentifier:  s: string -> TaggedText
+val tagPunctuation: s: string -> TaggedText
+val tagNumber:      s: string -> TaggedText
+val tagString:      s: string -> TaggedText
+val tagType:        s: string -> TaggedText
+val tagText:        s: string -> TaggedText
+val tagComment:     s: string -> TaggedText
 val ( ^^ )                : Layout -> Layout -> Layout   (* never break "glue" *)
 val ( ++ )                : Layout -> Layout -> Layout   (* if break, indent=0 *)
 val ( -- )                : Layout -> Layout -> Layout   (* if break, indent=1 *)

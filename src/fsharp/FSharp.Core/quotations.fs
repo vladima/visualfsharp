@@ -227,22 +227,22 @@ and [<CompiledName("FSharpExpr")>]
         let expr (e:Expr ) = e.GetLayout(long)
         let exprs (es:Expr list) = es |> List.map expr
         let parens ls = bracketL (commaListL ls)
-        let pairL l1 l2 = bracketL (l1 ^^ sepL "," ^^ l2)
+        let pairL l1 l2 = bracketL (l1 ^^ sepL (tagPunctuation ",") ^^ l2)
         let listL ls = squareBracketL (commaListL ls)
-        let combL nm ls = wordL nm ^^ parens ls
-        let noneL = wordL "None"
+        let combL nm ls = wordL (tagIdentifier nm) ^^ parens ls
+        let noneL = wordL (tagIdentifier "None")
         let someL e = combL "Some" [expr e]
-        let typeL (o: Type)  = wordL (if long then o.FullName else o.Name)
-        let objL (o: 'T)  = wordL (sprintf "%A" o)
-        let varL (v:Var) = wordL v.Name
+        let typeL (o: Type)  = wordL (tagType (if long then o.FullName else o.Name))
+        let objL (o: 'T)  = wordL (tagText (sprintf "%A" o))
+        let varL (v:Var) = wordL (tagIdentifier v.Name)
         let (|E|) (e: Expr) = e.Tree
         let (|Lambda|_|)        (E x) = match x with LambdaTerm(a,b)  -> Some (a,b) | _ -> None 
         let (|IteratedLambda|_|) (e: Expr) = qOneOrMoreRLinear (|Lambda|_|) e
-        let ucaseL (unionCase:UnionCaseInfo) = (if long then objL unionCase else wordL unionCase.Name) 
-        let minfoL (minfo: MethodInfo) = if long then objL minfo else wordL minfo.Name 
-        let cinfoL (cinfo: ConstructorInfo) = if long then objL cinfo else wordL cinfo.DeclaringType.Name
-        let pinfoL (pinfo: PropertyInfo) = if long then objL pinfo else wordL pinfo.Name
-        let finfoL (finfo: FieldInfo) = if long then objL finfo else wordL finfo.Name
+        let ucaseL (unionCase:UnionCaseInfo) = (if long then objL unionCase else wordL (tagIdentifier unionCase.Name)) 
+        let minfoL (minfo: MethodInfo) = if long then objL minfo else wordL (tagIdentifier minfo.Name) 
+        let cinfoL (cinfo: ConstructorInfo) = if long then objL cinfo else wordL (tagType cinfo.DeclaringType.Name)
+        let pinfoL (pinfo: PropertyInfo) = if long then objL pinfo else wordL (tagIdentifier pinfo.Name)
+        let finfoL (finfo: FieldInfo) = if long then objL finfo else wordL (tagIdentifier finfo.Name)
         let rec (|NLambdas|_|) n (e:Expr) = 
             match e with 
             | _ when n <= 0 -> Some([],e) 
@@ -259,7 +259,7 @@ and [<CompiledName("FSharpExpr")>]
         | CombTerm(UnionCaseTestOp(unionCase),args)   -> combL "UnionCaseTest" (exprs args@ [ucaseL unionCase])
         | CombTerm(NewTupleOp _,args)            -> combL "NewTuple" (exprs args)
         | CombTerm(TupleGetOp (_,i),[arg])         -> combL "TupleGet" ([expr arg] @ [objL i])
-        | CombTerm(ValueOp(v,_,Some nm),[])               -> combL "ValueWithName" [objL v; wordL nm]
+        | CombTerm(ValueOp(v,_,Some nm),[])               -> combL "ValueWithName" [objL v; wordL (tagIdentifier nm)]
         | CombTerm(ValueOp(v,_,None),[])               -> combL "Value" [objL v]
         | CombTerm(WithValueOp(v,_),[defn])               -> combL "WithValue" [objL v; expr defn]
         | CombTerm(InstanceMethodCallOp(minfo),obj::args) -> combL "Call"     [someL obj; minfoL minfo; listL (exprs args)]
@@ -291,9 +291,9 @@ and [<CompiledName("FSharpExpr")>]
             | NLambdas n (vs,e) -> combL "NewDelegate" ([typeL ty] @ (vs |> List.map varL) @ [expr e])
             | _ -> combL "NewDelegate" [typeL ty; expr e]
         //| CombTerm(_,args)   -> combL "??" (exprs args)
-        | VarTerm(v)   -> wordL v.Name
+        | VarTerm(v)   -> wordL (tagIdentifier v.Name)
         | LambdaTerm(v,b)   -> combL "Lambda" [varL v; expr b]
-        | HoleTerm _  -> wordL "_"
+        | HoleTerm _  -> wordL (tagIdentifier "_")
         | CombTerm(QuoteOp _,args) -> combL "Quote" (exprs args)
         | _ -> failwithf "Unexpected term in layout %A" x.Tree
 

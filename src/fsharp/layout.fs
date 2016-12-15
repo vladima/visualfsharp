@@ -53,6 +53,14 @@ let sepL   (str:TaggedText) = Leaf (true ,str,true)
 let rightL (str:TaggedText) = Leaf (true ,str,false)   
 let leftL  (str:TaggedText) = Leaf (false,str,true)
 
+let tagKeyword = TaggedText.Keyword
+let tagIdentifier = TaggedText.Identifier
+let tagPunctuation = TaggedText.Punctuation
+let tagNumber = TaggedText.Number
+let tagString = TaggedText.String
+let tagType = TaggedText.Type
+let tagText = TaggedText.Text
+let tagComment = TaggedText.Comment
 let aboveL  l r = mkNode l r (Broken 0)
 
 let tagAttrL str attrs ly = Attr (str,attrs,ly)

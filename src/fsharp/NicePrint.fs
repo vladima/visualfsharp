@@ -1216,77 +1216,121 @@ module InfoMemberPrinting =
     /// Format the arguments of a method to a buffer. 
     ///
     /// This uses somewhat "old fashioned" printf-style buffer printing.
-    let formatParamDataToBuffer denv os (ParamData(isParamArray, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) =
+    let layoutParamData denv (ParamData(isParamArray, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) =
         let isOptArg = optArgInfo.IsOptional
         match isParamArray, nmOpt, isOptArg, tryDestOptionTy denv.g pty with 
         // Layout an optional argument 
         | _, Some nm, true, ptyOpt -> 
             // detect parameter type, if ptyOpt is None - this is .NET style optional argument
             let pty = defaultArg ptyOpt pty
-            bprintf os "?%s: " nm.idText 
-            outputTy denv os pty
+            wordL (tagPunctuation "?") ^^
+            wordL (tagIdentifier nm.idText) ^^
+            wordL (tagPunctuation ":") ^^
+            wordL (tagText " ") ^^
+            PrintTypes.layoutType denv pty
         // Layout an unnamed argument 
         | _, None, _,_ -> 
-            outputTy denv os pty;
+            PrintTypes.layoutType denv pty
         // Layout a named argument 
         | true, Some nm,_,_ -> 
-            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> bufferL os
-            bprintf os " %s: " nm.idText 
-            outputTy denv os pty
+            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^
+            wordL (tagText " ") ^^
+            wordL (tagIdentifier nm.idText) ^^
+            wordL (tagPunctuation ": ") ^^
+            wordL (tagText " ") ^^
+            PrintTypes.layoutType denv pty
         | false, Some nm,_,_ -> 
-            bprintf os "%s: " nm.idText 
-            outputTy denv os pty
+            wordL (tagIdentifier nm.idText) ^^
+            wordL (tagPunctuation ":") ^^
+            wordL (tagText " ") ^^
+            PrintTypes.layoutType denv pty
 
+    let formatParamDataToBuffer denv os pd = layoutParamData denv pd |> bufferL os
+        
     /// Format a method info using "F# style".
     //
     // That is, this style:
     //          new : argName1:argType1 * ... * argNameN:argTypeN -> retType
     //          Method : argName1:argType1 * ... * argNameN:argTypeN -> retType
-    let private formatMethInfoToBufferFSharpStyle amap m denv os (minfo:MethInfo) minst =
-        if not minfo.IsConstructor && not minfo.IsInstance then  bprintf os "static "
-        if minfo.IsConstructor then  
-          bprintf os "new : "
-        else
-          bprintf os "member "
-          outputTypars denv minfo.LogicalName os minfo.FormalMethodTypars;
-          bprintf os " : " 
+    let private layoutMethInfoFSharpStyleCore amap m denv (minfo:MethInfo) minst =
+        let layout = 
+            if not minfo.IsConstructor && not minfo.IsInstance then wordL (tagKeyword "static") ^^ wordL (tagText " ")
+            else emptyL
+        let layout = 
+            layout ^^ 
+                if minfo.IsConstructor then
+                    wordL (tagKeyword "new") ^^
+                    wordL (tagText " ") ^^
+                    wordL (tagPunctuation ":") ^^
+                    wordL (tagText " ")
+                else
+                    wordL (tagKeyword "member") ^^
+                    wordL (tagText " ") ^^
+                    PrintTypes.layoutTyparDecls denv (wordL (tagIdentifier minfo.LogicalName)) true minfo.FormalMethodTypars ^^
+                    wordL (tagText " ") ^^
+                    wordL (tagPunctuation ":") ^^
+                    wordL (tagText " ")
         let paramDatas = minfo.GetParamDatas(amap, m, minst)
-        if (List.concat paramDatas).Length = 0 then 
-           bprintf os "unit"
-        paramDatas |> List.iteri (fun i datas -> 
-            if i > 0 then bprintf os " -> "; 
-            datas |> List.iteri (fun j arg -> 
-              if j > 0 then bprintf os " * "; 
-              formatParamDataToBuffer denv os arg))
+        let layout =
+            layout ^^
+                if (List.concat paramDatas).Length = 0 then
+                    wordL (tagType "unit")
+                else
+                    let argsSep = 
+                        wordL (tagText " ") ^^
+                        wordL (tagPunctuation "*") ^^
+                        wordL (tagText " ")
+
+                    let paramSep = 
+                        wordL (tagText " ") ^^
+                        wordL (tagPunctuation "->") ^^
+                        wordL (tagText " ")
+
+                    sepListL paramSep (List.map ((List.map (layoutParamData denv)) >> sepListL argsSep) paramDatas)
         let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
-        bprintf os " -> "  
-        outputTy denv os retTy
+        layout ^^
+        wordL (tagText " ") ^^
+        wordL (tagPunctuation "->") ^^
+        wordL (tagText " ") ^^
+        PrintTypes.layoutType denv retTy
 
     /// Format a method info using "half C# style".
     //
     // That is, this style:
     //          Container(argName1:argType1, ..., argNameN:argTypeN) : retType
     //          Container.Method(argName1:argType1, ..., argNameN:argTypeN) : retType
-    let private formatMethInfoToBufferCSharpStyle amap m denv os (minfo:MethInfo) minst =
+    let private layoutMethInfoCSharpStyle amap m denv (minfo:MethInfo) minst =
         let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
-        if minfo.IsExtensionMember then  
-          bprintf os "(%s) " (FSComp.SR.typeInfoExtension())
-        if isAppTy amap.g minfo.EnclosingType then 
-            outputTyconRef denv os (tcrefOfAppTy amap.g minfo.EnclosingType)
-        else
-            outputTy denv os minfo.EnclosingType
-        if minfo.IsConstructor then  
-          bprintf os "("
-        else
-          bprintf os "." 
-          outputTypars denv minfo.LogicalName os minfo.FormalMethodTypars
-          bprintf os "(" 
+        let layout = 
+            if minfo.IsExtensionMember then
+                wordL (tagPunctuation "(") ^^ wordL (tagKeyword (FSComp.SR.typeInfoExtension())) ^^ wordL (tagPunctuation ")")
+            else emptyL
+        let layout = 
+            layout ^^
+                if isAppTy amap.g minfo.EnclosingType then 
+                    PrintTypes.layoutTyconRef denv (tcrefOfAppTy amap.g minfo.EnclosingType)
+                    //outputTyconRef denv os 
+                else
+                    PrintTypes.layoutType denv minfo.EnclosingType
+        let layout = 
+            layout ^^
+                if minfo.IsConstructor then  
+                  wordL (tagPunctuation "(")
+                else
+                  wordL (tagPunctuation ".") ^^
+                  PrintTypes.layoutTyparDecls denv  (wordL (tagIdentifier minfo.LogicalName)) true minfo.FormalMethodTypars ^^
+                  wordL (tagPunctuation "(")
+
         let paramDatas = minfo.GetParamDatas (amap, m, minst)
-        paramDatas |> List.iter (List.iteri (fun i arg -> 
-              if i > 0 then bprintf os ", "; 
-              formatParamDataToBuffer denv os arg))
-        bprintf os ") : "  
-        outputTy denv os retTy
+        let argsSep = 
+            wordL (tagPunctuation ",") ^^
+            wordL (tagText " ")
+        let layout = layout ^^ sepListL argsSep ((List.concat >> List.map (layoutParamData denv)) paramDatas)
+        layout ^^ 
+        wordL (tagPunctuation ")") ^^
+        wordL (tagText " ") ^^
+        wordL (tagPunctuation ":") ^^
+        PrintTypes.layoutType denv retTy
 
 
     // Prettify this baby
@@ -1325,24 +1369,27 @@ module InfoMemberPrinting =
     //
     // For C# extension members:
     //          ApparentContainer.Method(argName1:argType1, ..., argNameN:argTypeN) : retType
-    let formatMethInfoToBufferFreeStyle amap m denv os minfo =
+    let layoutMethInfoToFreeStyle amap m denv minfo =
         match minfo with 
         | DefaultStructCtor(g,_typ) -> 
-            outputTyconRef denv os (tcrefOfAppTy g minfo.EnclosingType)
-            bprintf os "()"
+            PrintTypes.layoutTyconRef denv (tcrefOfAppTy g minfo.EnclosingType) ^^ wordL (tagPunctuation "()")
         | FSMeth(_,_,vref,_) -> 
-            vref.Deref |> PrintTastMemberOrVals.layoutValOrMember { denv with showMemberContainers=true; } |> bufferL os
+            vref.Deref |> PrintTastMemberOrVals.layoutValOrMember { denv with showMemberContainers=true; }
         | ILMeth(_,ilminfo,_) -> 
             let minfo,minst = prettifyILMethInfo amap m minfo ilminfo
-            formatMethInfoToBufferCSharpStyle amap m denv os minfo minst
+            layoutMethInfoCSharpStyle amap m denv minfo minst
     #if EXTENSIONTYPING
         | ProvidedMeth _  -> 
-            formatMethInfoToBufferCSharpStyle amap m denv os minfo minfo.FormalMethodInst
+            layoutMethInfoCSharpStyle amap m denv minfo minfo.FormalMethodInst
     #endif
 
+    let formatMethInfoToBufferFreeStyle amap m denv os minfo = 
+        layoutMethInfoToFreeStyle amap m denv minfo |> bufferL os
+
     /// Format a method to a layout (actually just containing a string) using "free style" (aka "standalone"). 
-    let layoutMethInfoFSharpStyle amap m denv (minfo: MethInfo) = 
-        wordL (bufs (fun buf -> formatMethInfoToBufferFSharpStyle amap m denv buf minfo minfo.FormalMethodInst))
+    let layoutMethInfoFSharpStyle amap m denv (minfo: MethInfo) =
+        layoutMethInfoFSharpStyleCore amap m denv minfo minfo.FormalMethodInst
+        //wordL (bufs (fun buf -> formatMethInfoToBufferFSharpStyle amap m denv buf minfo minfo.FormalMethodInst))
 
 
 //-------------------------------------------------------------------------

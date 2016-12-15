@@ -52,6 +52,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     open ReflectionAdapters
 #endif
 
+    [<NoEquality; NoComparison>]
 #if COMPILER
     type internal TaggedText =
 #else
@@ -177,7 +178,15 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | TaggedText.Comment t
             | TaggedText.Punctuation t -> t = ""
          | _ -> false
-         
+
+        let tagKeyword = TaggedText.Keyword
+        let tagIdentifier = TaggedText.Identifier
+        let tagPunctuation = TaggedText.Punctuation
+        let tagNumber = TaggedText.Number
+        let tagString = TaggedText.String
+        let tagType = TaggedText.Type
+        let tagText = TaggedText.Text
+        let tagComment = TaggedText.Comment
 
         let aboveL  l r = mkNode l r (Broken 0)
 
@@ -1064,7 +1073,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                            // c) "abcdefg"+[n chars] -- gives a prefix and the remaining chars
                            wordL (TaggedText.String(formatStringInWidth opts.StringLimit s))
 #else
-                        wordL (formatString s)  
+                        wordL (TaggedText.String (formatString s))  
 #endif                        
                     | :? Array as arr -> 
                         let ty = arr.GetType().GetElementType()

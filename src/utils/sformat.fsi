@@ -37,6 +37,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// Data representing structured layouts of terms.  
 #if RUNTIME  // FSharp.Core.dll makes things internal and hides representations
     type internal Layout
+    type TaggedText
 #else  // FSharp.Compiler.dll, FSharp.Compiler-proto.dll, FSharp.PowerPack.dll
     // FSharp.PowerPack.dll: reveals representations
     // FSharp.Compiler-proto.dll, FSharp.Compiler.dll: the F# compiler likes to see these representations
@@ -52,20 +53,21 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | Unbreakable
         | Breakable of int
         | Broken of int
-
+    
+    [<NoEquality; NoComparison>]
 #if COMPILER
     type internal TaggedText =
 #else
     type TaggedText =
 #endif
-        | Keyword of string
-        | Identifier of string
-        | Text of string
-        | String of string
-        | Punctuation of string
-        | Comment of string
-        | Number of string
-        | Type of string
+    | Keyword of string
+    | Identifier of string
+    | Text of string
+    | String of string
+    | Punctuation of string
+    | Comment of string
+    | Number of string
+    | Type of string
         with 
         member Value: string
         member Length: int
@@ -133,7 +135,16 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         val emptyL     : Layout
         /// Is it the empty layout?
         val isEmptyL   : layout:Layout -> bool
-        
+
+        val tagKeyword:     s: string -> TaggedText
+        val tagIdentifier:  s: string -> TaggedText
+        val tagPunctuation: s: string -> TaggedText
+        val tagNumber:      s: string -> TaggedText
+        val tagString:      s: string -> TaggedText
+        val tagType:        s: string -> TaggedText
+        val tagText:        s: string -> TaggedText
+        val tagComment:     s: string -> TaggedText
+
         /// An uninterpreted leaf, to be interpreted into a string
         /// by the layout engine. This allows leaf layouts for numbers, strings and
         /// other atoms to be customized according to culture.
