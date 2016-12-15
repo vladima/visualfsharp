@@ -65,6 +65,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | Punctuation of string
         | Number of string
         | Type of string
+        | Comment of string
         with 
         member Value: string
         member Length: int

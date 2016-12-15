@@ -39,11 +39,12 @@ open Microsoft.FSharp.Core.CompilerServices
 [<AutoOpen>]
 module internal PrintUtilities = 
     let bracketIfL x lyt = if x then bracketL lyt else lyt
-    let squareAngleL x = leftL "[<" ^^ x ^^ rightL ">]"
-    let angleL x = sepL "<" ^^ x ^^ rightL ">"  
-    let braceL x = leftL "{" ^^ x ^^ rightL "}"  
+    let squareAngleL x = leftL (TaggedText.Punctuation "[<") ^^ x ^^ rightL (TaggedText.Punctuation ">]")
+    let angleL x = sepL (TaggedText.Punctuation "<") ^^ x ^^ rightL (TaggedText.Punctuation ">")
+    let braceL x = leftL (TaggedText.Punctuation "{") ^^ x ^^ rightL (TaggedText.Punctuation "}")
 
-    let commentL l = wordL "(*" ++ l ++ wordL "*)"
+    // TODO
+    //let commentL l = wordL (TaggedText.Comment "(*") ++ l ++ wordL (TaggedText.Comment "*)")
     let comment str = str |> wordL |> commentL
 
     let layoutsL (ls : layout list) : layout =
@@ -58,7 +59,7 @@ module internal PrintUtilities =
 
     let applyMaxMembers maxMembers (alldecls : _ list) = 
         match maxMembers with 
-        | Some n when alldecls.Length > n -> (alldecls |> List.truncate n) @ [wordL "..."] 
+        | Some n when alldecls.Length > n -> (alldecls |> List.truncate n) @ [wordL (TaggedText.Punctuation "...")] 
         | _ -> alldecls
 
     /// fix up a name coming from IL metadata by quoting "funny" names (keywords, otherwise invalid identifiers)
@@ -69,7 +70,7 @@ module internal PrintUtilities =
     let shrinkOverloads layoutFunction resultFunction group = 
         match group with 
         | [x] -> [resultFunction x (layoutFunction x)] 
-        | (x:: rest) -> [ resultFunction x (layoutFunction x -- leftL (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n))) ] 
+        | (x:: rest) -> [ resultFunction x (layoutFunction x -- leftL (TaggedText.Text (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n)))) ] 
         | _ -> []
     
     let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref:TyconRef) = 
@@ -84,7 +85,7 @@ module internal PrintUtilities =
             if isAttribute then 
                 defaultArg (String.tryDropSuffix name "Attribute") name 
             else name
-        let tyconTextL = wordL demangled
+        let tyconTextL = wordL (TaggedText.Type demangled)
         if denv.shortTypeNames then 
             tyconTextL
         else
@@ -97,7 +98,7 @@ module internal PrintUtilities =
                                                if i <> -1 then s.Substring(0,i)+"<...>" // apparently has static params, shorten
                                                else s)
             let pathText = trimPathByDisplayEnv denv path
-            if pathText = "" then tyconTextL else leftL pathText ^^ tyconTextL
+            if pathText = "" then tyconTextL else leftL (TaggedText.Type pathText) ^^ tyconTextL
 
     let layoutBuiltinAttribute (denv: DisplayEnv) (attrib: BuiltinAttribInfo) =
         let tcref = attrib.TyconRef
@@ -134,9 +135,9 @@ module private PrintIL =
             | _                -> path
         let p2,n = List.frontAndBack path
         if denv.shortTypeNames then 
-            wordL n
+            wordL (TaggedText.Type n)
           else
-            leftL (trimPathByDisplayEnv denv p2) ^^ wordL n
+            leftL (TaggedText.Type (trimPathByDisplayEnv denv p2)) ^^ wordL (TaggedText.Type n)
 
     let layoutILTypeRef denv tref =
         let path = fullySplitILTypeRef tref

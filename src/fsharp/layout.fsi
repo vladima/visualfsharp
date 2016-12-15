@@ -7,6 +7,7 @@ open System.IO
 open Internal.Utilities.StructuredFormat
 
 type layout = Internal.Utilities.StructuredFormat.Layout
+type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
 
 val emptyL                : Layout
 val isEmptyL              : Layout -> bool

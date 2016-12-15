@@ -62,10 +62,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | Text of string
         | String of string
         | Punctuation of string
+        | Comment of string
         | Number of string
         | Type of string
         with 
-        member this.Value = match this with Keyword t | Identifier t | Text t | Punctuation t | Number t | Type t | String t -> t
+        member this.Value = match this with Keyword t | Identifier t | Text t | Punctuation t | Number t | Type t | String t | Comment t -> t
         member this.Length = this.Value.Length
         static member GetText(t: TaggedText) = t.Value
     
@@ -173,6 +174,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | TaggedText.Number t
             | TaggedText.Type t
             | TaggedText.String t
+            | TaggedText.Comment t
             | TaggedText.Punctuation t -> t = ""
          | _ -> false
          

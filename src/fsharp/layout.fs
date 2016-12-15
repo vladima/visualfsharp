@@ -10,6 +10,8 @@ open Microsoft.FSharp.Core.Printf
 #nowarn "62" // This construct is for ML compatibility.
 
 type layout = Internal.Utilities.StructuredFormat.Layout
+type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
+
 let spaces n = new String(' ',n)
 
 
