@@ -1177,7 +1177,7 @@ module internal ItemDescriptionsImpl =
         | Item.ActivePatternResult _ // "let (|Foo|Bar|) = .. Fo$o ..." - no keyword
             ->  None
 
-    let FormatDescriptionOfItem isDecl (infoReader:InfoReader)  m denv d : FSharpToolTipElement = 
+    let FormatDescriptionOfItem isDecl (infoReader:InfoReader)  m denv d : FSharpToolTipElement<_> = 
         ErrorScope.Protect m 
             (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader m denv d)
             (fun err -> FSharpToolTipElement.CompositionError(err))
@@ -1275,7 +1275,7 @@ module internal ItemDescriptionsImpl =
 /// An intellisense declaration
 [<Sealed>]
 type FSharpDeclarationListItem(name, glyphMajor:GlyphMajor, glyphMinor:GlyphMinor, info) =
-    let mutable descriptionTextHolder:FSharpToolTipText option = None
+    let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
     let mutable task = null
 
     member decl.Name = name
@@ -1290,7 +1290,7 @@ type FSharpDeclarationListItem(name, glyphMajor:GlyphMajor, glyphMinor:GlyphMino
                           // It is best to think of this as a "weak reference" to the IncrementalBuilder, i.e. this code is written to be robust to its
                           // disposal. Yes, you are right to scratch your head here, but this is ok.
                               if checkAlive() then FSharpToolTipText(items |> Seq.toList |> List.map (FormatDescriptionOfItem true infoReader m denv))
-                              else FSharpToolTipText [ FSharpToolTipElement.Single(FSComp.SR.descriptionUnavailable(), FSharpXmlDoc.None) ])
+                              else FSharpToolTipText [ FSharpToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ])
             | Choice2Of2 result -> 
                 async.Return result
 
@@ -1314,7 +1314,7 @@ type FSharpDeclarationListItem(name, glyphMajor:GlyphMajor, glyphMinor:GlyphMino
                 task.Wait EnvMisc2.dataTipSpinWaitTime  |> ignore
                 match descriptionTextHolder with 
                 | Some text -> text
-                | None -> FSharpToolTipText [ FSharpToolTipElement.Single(FSComp.SR.loadingDescription(), FSharpXmlDoc.None) ]
+                | None -> FSharpToolTipText [ FSharpToolTipElement.Single(wordL (tagText (FSComp.SR.loadingDescription())), FSharpXmlDoc.None) ]
 
             | Choice2Of2 result -> 
                 result
