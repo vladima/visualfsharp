@@ -794,49 +794,61 @@ module internal ItemDescriptionsImpl =
         | Item.RecdField rfinfo ->
             let rfield = rfinfo.RecdField
             let _, ty, _cxs = PrettyTypes.PrettifyTypes1 g rfinfo.FieldType
-            let text = 
-                bufs (fun os -> 
-                    NicePrint.outputTyconRef denv os rfinfo.TyconRef
-                    bprintf os ".%s: "  
-                        (DecompileOpName rfield.Name) 
-                    NicePrint.outputTy denv os ty;
-                    match rfinfo.LiteralValue with 
-                    | None -> ()
-                    | Some lit -> 
-                       try bprintf os " = %s" (Layout.showL ( NicePrint.layoutConst denv.g ty lit )) with _ -> ())
-            FSharpToolTipElement.Single(text, xml)
+            let layout = 
+                NicePrint.layoutTyconRef denv rfinfo.TyconRef ^^
+                wordL (tagPunctuation ".") ^^
+                wordL (tagIdentifier (DecompileOpName rfield.Name)) ^^
+                wordL (tagPunctuation ":") ^^
+                wordL (tagText " ") ^^
+                NicePrint.layoutTy denv ty ^^
+                (
+                    match rfinfo.LiteralValue with
+                    | None -> emptyL
+                    | Some lit -> try NicePrint.layoutConst denv.g ty lit with _ -> emptyL
+                )
+            FSharpToolTipElement.Single(layout, xml)
 
         // Not used
         | Item.NewDef id -> 
-            let dataTip = bufs (fun os -> bprintf os "%s %s" (FSComp.SR.typeInfoPatternVariable()) id.idText)
-            FSharpToolTipElement.Single(dataTip, xml)
+            let layout = 
+                wordL (tagKeyword (FSComp.SR.typeInfoPatternVariable())) ^^
+                wordL (tagText " ") ^^
+                wordL (tagIdentifier id.idText)
+            FSharpToolTipElement.Single(layout, xml)
 
         // .NET fields
         | Item.ILField finfo ->
-            let dataTip = bufs (fun os -> 
-                bprintf os "%s " (FSComp.SR.typeInfoField()) 
-                NicePrint.outputILTypeRef denv os finfo.ILTypeRef
-                bprintf os ".%s" finfo.FieldName;
-                match finfo.LiteralValue with 
-                | None -> ()
-                | Some v -> 
-                   try bprintf os " = %s" (Layout.showL ( NicePrint.layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (TypeChecker.TcFieldInit m v) )) 
-                   with _ -> ())
-            FSharpToolTipElement.Single(dataTip, xml)
+            let layout = 
+                wordL (tagKeyword (FSComp.SR.typeInfoField())) ^^
+                wordL (tagText " ") ^^
+                NicePrint.layoutILTypeRef denv finfo.ILTypeRef ^^
+                wordL (tagPunctuation ".") ^^
+                wordL (tagIdentifier finfo.FieldName) ^^
+                (
+                    match finfo.LiteralValue with
+                    | None -> emptyL
+                    | Some v ->
+                        wordL (tagText " ") ^^
+                        wordL (tagPunctuation "=") ^^
+                        wordL (tagText " ") ^^
+                        try NicePrint.layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (TypeChecker.TcFieldInit m v) with _ -> emptyL
+                )
+            FSharpToolTipElement.Single(layout, xml)
 
         // .NET events
         | Item.Event einfo ->
             let rty = PropTypOfEventInfo infoReader m AccessibleFromSomewhere einfo
             let _,rty, _cxs = PrettyTypes.PrettifyTypes1 g rty
-            let text = 
-                bufs (fun os -> 
-                    // REVIEW: use _cxs here
-                    bprintf os "%s " (FSComp.SR.typeInfoEvent()) 
-                    NicePrint.outputTyconRef denv os (tcrefOfAppTy g einfo.EnclosingType) 
-                    bprintf os ".%s: " einfo.EventName
-                    NicePrint.outputTy denv os rty)
-
-            FSharpToolTipElement.Single(text, xml)
+            let layout =
+                wordL (tagKeyword (FSComp.SR.typeInfoEvent())) ^^
+                wordL (tagText " ") ^^
+                NicePrint.layoutTyconRef denv (tcrefOfAppTy g einfo.EnclosingType) ^^
+                wordL (tagPunctuation ".") ^^
+                wordL (tagIdentifier einfo.EventName) ^^
+                wordL (tagPunctuation ":") ^^
+                wordL (tagText " ") ^^
+                NicePrint.layoutTy denv rty
+            FSharpToolTipElement.Single(layout, xml)
 
         // F# and .NET properties
         | Item.Property(_,pinfos) -> 
@@ -844,14 +856,17 @@ module internal ItemDescriptionsImpl =
             let rty = pinfo.GetPropertyType(amap,m) 
             let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
             let _, rty, _ = PrettyTypes.PrettifyTypes1 g rty
-            let text =
-                bufs (fun os -> 
-                    bprintf os "%s " (FSComp.SR.typeInfoProperty())
-                    NicePrint.outputTyconRef denv os (tcrefOfAppTy g pinfo.EnclosingType)
-                    bprintf os ".%s: " pinfo.PropertyName  
-                    NicePrint.outputTy denv os rty)
+            let layout =
+                wordL (tagKeyword (FSComp.SR.typeInfoProperty())) ^^
+                wordL (tagText " ") ^^
+                NicePrint.layoutTyconRef denv (tcrefOfAppTy g pinfo.EnclosingType) ^^
+                wordL (tagPunctuation ".") ^^
+                wordL (tagIdentifier pinfo.PropertyName) ^^
+                wordL (tagPunctuation ":") ^^
+                wordL (tagText " ") ^^
+                NicePrint.layoutTy denv rty
 
-            FSharpToolTipElement.Single(text, xml)
+            FSharpToolTipElement.Single(layout, xml)
 
         // Custom operations in queries
         | Item.CustomOperation (customOpName,usageText,Some minfo) -> 
