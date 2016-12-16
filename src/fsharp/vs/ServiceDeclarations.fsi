@@ -28,7 +28,7 @@ type internal FSharpXmlDoc =
     /// Indicates that the text for the documentation can be found in a .xml documentation file, using the given signature key
     | XmlDocFileSignature of (*File:*) string * (*Signature:*)string
 
-type Layout = Internal.Utilities.StructuredFormat.Layout
+type internal Layout = Internal.Utilities.StructuredFormat.Layout
 
 /// A single tool tip display element
 //

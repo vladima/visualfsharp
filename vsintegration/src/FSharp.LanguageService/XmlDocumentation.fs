@@ -214,23 +214,23 @@ module internal XmlDocumentation =
           .Trim([|'\n'|])
 
     /// Build a data tip text string with xml comments injected.
-    let BuildTipText(documentationProvider:IDocumentationBuilder, dataTipText:FSharpToolTipElement list, showText, showExceptions, showParameters, showOverloadText) = 
+    let BuildTipText(documentationProvider:IDocumentationBuilder, dataTipText:FSharpToolTipElement<Layout> list, showText, showExceptions, showParameters, showOverloadText) = 
         let maxLinesInText = 45
-        let Format(dataTipElement:FSharpToolTipElement) =
+        let Format(dataTipElement:FSharpToolTipElement<_>) =
             let segment = 
                 match dataTipElement with 
                 | FSharpToolTipElement.None ->StringBuilder()
                 | FSharpToolTipElement.Single (text,xml) -> 
                     let segment = StringBuilder()
                     if showText then 
-                        segment.Append(text) |> ignore
+                        segment.Append(Microsoft.FSharp.Compiler.Layout.showL text) |> ignore
 
                     AppendXmlComment(documentationProvider, segment, xml, showExceptions, showParameters, None)
                     segment
                 | FSharpToolTipElement.SingleParameter(text, xml, paramName) ->
                     let segment = StringBuilder()
                     if showText then 
-                        segment.Append(text) |> ignore
+                        segment.Append(Microsoft.FSharp.Compiler.Layout.showL text) |> ignore
 
                     AppendXmlComment(documentationProvider, segment, xml, showExceptions, showParameters, Some paramName)
                     segment
@@ -241,8 +241,9 @@ module internal XmlDocumentation =
                     if len >= 1 then 
                         if showOverloadText then 
                             let AppendOverload(text,_) = 
-                                if not(String.IsNullOrEmpty(text)) then
-                                    segment.Append("\n").Append(text) |> ignore
+                                // TODO: fixme
+                                //if not(String.IsNullOrEmpty(text)) then
+                                    segment.Append("\n").Append(Microsoft.FSharp.Compiler.Layout.showL text) |> ignore
 
                             AppendOverload(overloads.[0])
                             if len >= 2 then AppendOverload(overloads.[1])

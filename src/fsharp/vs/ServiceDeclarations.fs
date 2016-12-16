@@ -33,7 +33,7 @@ open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons 
 
-type Layout = Internal.Utilities.StructuredFormat.Layout
+type internal Layout = Internal.Utilities.StructuredFormat.Layout
 
 module EnvMisc2 =
     let maxMembers   = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10

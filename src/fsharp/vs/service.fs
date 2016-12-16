@@ -44,7 +44,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionsImpl
 open Internal.Utilities
 open Internal.Utilities.Collections
 
-type Layout = Internal.Utilities.StructuredFormat.Layout
+type internal Layout = Internal.Utilities.StructuredFormat.Layout
 
 [<AutoOpen>]
 module EnvMisc =

@@ -41,7 +41,7 @@ type internal FSharpMethodGroupItem =
     member XmlDoc : FSharpXmlDoc
 
     /// The formatted description text for the method (or other item)
-    member Description : FSharpToolTipText
+    member Description : FSharpToolTipText<Layout>
 
     /// The formatted type text for the method (or other item)
     member TypeText: string
