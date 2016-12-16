@@ -657,6 +657,7 @@ val fullDisplayTextOfParentOfModRef : ModuleOrNamespaceRef -> string option
 val fullDisplayTextOfValRef   : ValRef -> string
 val fullDisplayTextOfValRefAsLayout   : ValRef -> StructuredFormat.Layout
 val fullDisplayTextOfTyconRef  : TyconRef -> string
+val fullDisplayTextOfTyconRefAsLayout  : TyconRef -> StructuredFormat.Layout
 val fullDisplayTextOfExnRef  : TyconRef -> string
 val fullDisplayTextOfExnRefAsLayout  : TyconRef -> StructuredFormat.Layout
 val fullDisplayTextOfUnionCaseRef  : UnionCaseRef -> string

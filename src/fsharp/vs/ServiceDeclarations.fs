@@ -909,28 +909,27 @@ module internal ItemDescriptionsImpl =
         // and in that case we'll just show the interface type name.
         | Item.FakeInterfaceCtor typ ->
            let _, typ, _ = PrettyTypes.PrettifyTypes1 g typ
-           let text = bufs (fun os -> NicePrint.outputTyconRef denv os (tcrefOfAppTy g typ))
-           FSharpToolTipElement.Single(text, xml)
+           let layout = NicePrint.layoutTyconRef denv (tcrefOfAppTy g typ)
+           FSharpToolTipElement.Single(layout, xml)
         
         // The 'fake' representation of constructors of .NET delegate types
         | Item.DelegateCtor delty -> 
            let _, delty, _cxs = PrettyTypes.PrettifyTypes1 g delty
            let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
-           let text = bufs (fun os -> 
-                         NicePrint.outputTyconRef denv os (tcrefOfAppTy g delty)
-                         bprintf os "("
-                         NicePrint.outputTy denv os fty
-                         bprintf os ")")
-           FSharpToolTipElement.Single(text, xml)
+           let layout =
+               NicePrint.layoutTyconRef denv (tcrefOfAppTy g delty) ^^
+               wordL (tagPunctuation "(") ^^
+               NicePrint.layoutTy denv fty ^^
+               wordL (tagPunctuation ")")
+           FSharpToolTipElement.Single(layout, xml)
 
         // Types.
         | Item.Types(_,((TType_app(tcref,_)):: _)) -> 
-            let text = 
-                bufs (fun os -> 
-                    let denv = { denv with shortTypeNames = true  }
-                    NicePrint.outputTycon denv infoReader AccessibleFromSomewhere m (* width *) os tcref.Deref
-                    OutputFullName isDecl pubpath_of_tcref fullDisplayTextOfTyconRef os tcref)
-            FSharpToolTipElement.Single(text, xml)
+            let denv = { denv with shortTypeNames = true  }
+            let layout =
+                NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere m (* width *) tcref.Deref ^^
+                OutputFullName isDecl pubpath_of_tcref fullDisplayTextOfTyconRefAsLayout tcref
+            FSharpToolTipElement.Single(layout, xml)
 
         // F# Modules and namespaces
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
@@ -962,10 +961,15 @@ module internal ItemDescriptionsImpl =
         // Named parameters
         | Item.ArgName (id, argTy, _) -> 
             let _, argTy, _ = PrettyTypes.PrettifyTypes1 g argTy
-            let text = bufs (fun os -> 
-                          bprintf os "%s %s : " (FSComp.SR.typeInfoArgument()) id.idText 
-                          NicePrint.outputTy denv os argTy)
-            FSharpToolTipElement.SingleParameter(text, xml, id.idText)
+            let layout =
+                wordL (tagKeyword (FSComp.SR.typeInfoArgument())) ^^
+                wordL (tagText " ") ^^
+                wordL (tagIdentifier id.idText) ^^
+                wordL (tagText " ") ^^
+                wordL (tagPunctuation ":") ^^
+                wordL (tagText " ") ^^
+                NicePrint.layoutTy denv argTy
+            FSharpToolTipElement.SingleParameter(layout, xml, id.idText)
             
         | Item.SetterArg (_, item) -> 
             FormatItemDescriptionToToolTipElement isDecl infoReader m denv item

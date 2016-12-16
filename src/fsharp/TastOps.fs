@@ -2549,6 +2549,7 @@ let fullDisplayTextOfParentOfModRef r = fullNameOfParentOfEntityRef r
 
 let fullDisplayTextOfModRef r = fullNameOfEntityRef (fun (x:EntityRef) -> x.DemangledModuleOrNamespaceName)  r
 let fullDisplayTextOfTyconRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfTyconRefAsLayout  r = fullNameOfEntityRefAsLayout (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 let fullDisplayTextOfExnRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 let fullDisplayTextOfExnRefAsLayout  r = fullNameOfEntityRefAsLayout (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 
