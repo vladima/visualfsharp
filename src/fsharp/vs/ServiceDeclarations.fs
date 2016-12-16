@@ -33,6 +33,8 @@ open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons 
 
+type Layout = Internal.Utilities.StructuredFormat.Layout
+
 module EnvMisc2 =
     let maxMembers   = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10
 
@@ -874,28 +876,50 @@ module internal ItemDescriptionsImpl =
             // Build 'custom operation: where (bool)
             //        
             //        Calls QueryBuilder.Where'
-            let text =
-                bufs (fun os -> 
-                    bprintf os "%s: " (FSComp.SR.typeInfoCustomOperation()) 
-                    match usageText() with 
-                    | Some t -> 
-                        bprintf os "%s" t
-                    | None -> 
+            let layout = 
+                wordL (tagKeyword (FSComp.SR.typeInfoCustomOperation())) ^^
+                wordL (tagPunctuation ":") ^^
+                wordL (tagText " ") ^^
+                (
+                    match usageText() with
+                    | Some t -> wordL (tagText t)
+                    | None ->
                         let argTys = ParamNameAndTypesOfUnaryCustomOperation g minfo |> List.map (fun (ParamNameAndType(_,ty)) -> ty)
                         let _, argTys, _ = PrettyTypes.PrettifyTypesN g argTys 
+                        let argLs =
+                            wordL (tagPunctuation "(") ^^
+                            sepListL (wordL (tagPunctuation ",")) (List.map (NicePrint.layoutTy denv) argTys) ^^
+                            wordL (tagPunctuation ")")
+                        wordL (tagIdentifier customOpName) ^^
+                        argLs
+                ) ^^
+                wordL (tagText (sprintf "\n\n%s" (FSComp.SR.typeInfoCallsWord()) )) ^^
+                NicePrint.layoutTyconRef denv (tcrefOfAppTy g minfo.EnclosingType) ^^
+                wordL (tagPunctuation ".") ^^
+                wordL (tagIdentifier minfo.DisplayName)
 
-                        bprintf os "%s" customOpName
-                        for argTy in argTys do
-                            bprintf os " ("
-                            NicePrint.outputTy denv os argTy
-                            bprintf os ")" 
-                    bprintf os "\n\n%s "
-                        (FSComp.SR.typeInfoCallsWord()) 
-                    NicePrint.outputTyconRef denv os (tcrefOfAppTy g minfo.EnclosingType)
-                    bprintf os ".%s " 
-                        minfo.DisplayName)
+            //let text =
+            //    bufs (fun os -> 
+            //        bprintf os "%s: " (FSComp.SR.typeInfoCustomOperation()) 
+            //        match usageText() with 
+            //        | Some t -> 
+            //            bprintf os "%s" t
+            //        | None -> 
+            //            let argTys = ParamNameAndTypesOfUnaryCustomOperation g minfo |> List.map (fun (ParamNameAndType(_,ty)) -> ty)
+            //            let _, argTys, _ = PrettyTypes.PrettifyTypesN g argTys 
 
-            FSharpToolTipElement.Single(text, xml)
+            //            bprintf os "%s" customOpName
+            //            for argTy in argTys do
+            //                bprintf os " ("
+            //                NicePrint.outputTy denv os argTy
+            //                bprintf os ")" 
+            //        bprintf os "\n\n%s "
+            //            (FSComp.SR.typeInfoCallsWord()) 
+            //        NicePrint.outputTyconRef denv os (tcrefOfAppTy g minfo.EnclosingType)
+            //        bprintf os ".%s " 
+            //            minfo.DisplayName)
+
+            FSharpToolTipElement.Single(layout, xml)
 
         // F# constructors and methods
         | Item.CtorGroup(_,minfos) 
@@ -933,14 +957,19 @@ module internal ItemDescriptionsImpl =
 
         // F# Modules and namespaces
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
-            let os = StringBuilder()
+            //let os = StringBuilder()
             let modrefs = modrefs |> RemoveDuplicateModuleRefs
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
             let kind = 
                 if definiteNamespace then FSComp.SR.typeInfoNamespace()
                 elif modrefs |> List.forall (fun modref -> modref.IsModule) then FSComp.SR.typeInfoModule()
                 else FSComp.SR.typeInfoNamespaceOrModule()
-            bprintf os "%s %s" kind (if definiteNamespace then fullDisplayTextOfModRef modref else modref.DemangledModuleOrNamespaceName)
+            
+            let layout = 
+                wordL (tagKeyword kind) ^^
+                wordL (tagText " ") ^^
+                wordL (tagIdentifier (if definiteNamespace then fullDisplayTextOfModRef modref else modref.DemangledModuleOrNamespaceName))
+            //bprintf os "%s %s" kind (if definiteNamespace then fullDisplayTextOfModRef modref else modref.DemangledModuleOrNamespaceName)
             if not definiteNamespace then
                 let namesToAdd = 
                     ([],modrefs) 
@@ -950,13 +979,26 @@ module internal ItemDescriptionsImpl =
                         | _ -> st) 
                     |> Seq.mapi (fun i x -> i,x) 
                     |> Seq.toList
-                if not (List.isEmpty namesToAdd) then 
-                    bprintf os "\n"
-                for i, txt in namesToAdd do
-                    bprintf os "\n%s" ((if i = 0 then FSComp.SR.typeInfoFromFirst else FSComp.SR.typeInfoFromNext) txt)
-                FSharpToolTipElement.Single(os.ToString(), xml)
+                let layout =
+                    layout ^^
+                    (
+                        if not (List.isEmpty namesToAdd) then
+                            wordL (tagText "\n") ^^
+                            List.fold ( fun s (i, txt) ->
+                                s ^^
+                                wordL (tagText "\n") ^^
+                                wordL (tagIdentifier ((if i = 0 then FSComp.SR.typeInfoFromFirst else FSComp.SR.typeInfoFromNext) txt))
+                            ) emptyL namesToAdd 
+                        else 
+                            emptyL
+                    )
+                //if not (List.isEmpty namesToAdd) then 
+                //    bprintf os "\n"
+                //for i, txt in namesToAdd do
+                //    bprintf os "\n%s" ((if i = 0 then FSComp.SR.typeInfoFromFirst else FSComp.SR.typeInfoFromNext) txt)
+                FSharpToolTipElement.Single(layout, xml)
             else
-                FSharpToolTipElement.Single(os.ToString(), xml)
+                FSharpToolTipElement.Single(layout, xml)
 
         // Named parameters
         | Item.ArgName (id, argTy, _) -> 
