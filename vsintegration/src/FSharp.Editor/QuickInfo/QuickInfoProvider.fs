@@ -62,13 +62,14 @@ type internal FSharpQuickInfoProvider
     [<System.ComponentModel.Composition.ImportingConstructor>] 
     (
         [<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
-        classificationFormatMapService: IClassificationFormatMapService,
+        _classificationFormatMapService: IClassificationFormatMapService,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        typeMap: Shared.Utilities.ClassificationTypeMap
     ) =
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
-    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
+    let _documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     
     static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) =
         async {
@@ -117,10 +118,31 @@ type internal FSharpQuickInfoProvider
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                         let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode(), cancellationToken)
                         match quickInfoResult with
-                        | Some(toolTipElement, textSpan) ->
-                            let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement)
-                            let textProperties = classificationFormatMapService.GetClassificationFormatMap("tooltip").DefaultTextProperties
-                            return QuickInfoItem(textSpan, FSharpDeferredQuickInfoContent(dataTipText, textProperties))
+                        | Some(FSharpToolTipText(toolTipElements), textSpan) ->
+                            //let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement)
+                            let text, xml = 
+                                toolTipElements 
+                                |> List.map (function
+                                    | FSharpToolTipElement.Single (l, xml) -> 
+                                        CommonRoslynHelpers.LayoutToTaggedTextList l,
+                                        CommonRoslynHelpers.FSharpDocToTaggedTextList xml
+                                    | _ -> upcast Array.empty, upcast Array.empty)
+                                |> List.head
+                            let empty = ClassifiableDeferredContent(Array.Empty<TaggedText>(), typeMap);
+                            let content = 
+                                QuickInfoDisplayDeferredContent
+                                    (
+                                        symbolGlyph = null,//SymbolGlyphDeferredContent(),
+                                        warningGlyph = null,
+                                        mainDescription = ClassifiableDeferredContent(text, typeMap),
+                                        documentation = ClassifiableDeferredContent(xml, typeMap),
+                                        typeParameterMap = empty,
+                                        anonymousTypes = empty,
+                                        usageText = empty,
+                                        exceptionText = empty
+                                    )
+                            //let textProperties = classificationFormatMapService.GetClassificationFormatMap("tooltip").DefaultTextProperties
+                            return QuickInfoItem(textSpan, content)
                         | None -> return null
                     | None -> return null
                 | None -> return null

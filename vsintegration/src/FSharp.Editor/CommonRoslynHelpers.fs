@@ -34,6 +34,31 @@ module internal CommonRoslynHelpers =
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
 
+    let FSharpDocToTaggedTextList fsd : System.Collections.Generic.IList<TaggedText> = 
+        match fsd with
+        | FSharpXmlDoc.None -> upcast Array.Empty<_>()
+        | FSharpXmlDoc.XmlDocFileSignature(_file, _signature) -> upcast Array.Empty<_>()
+        | FSharpXmlDoc.Text(_rawXml) -> upcast Array.Empty<_>()
+
+    let LayoutToTaggedTextList l : System.Collections.Generic.IList<_> =
+        let ls = Layout.renderL Layout.taggedTextListR l
+        if List.isEmpty ls then upcast Array.Empty<_>()
+        else
+        let result = ResizeArray()
+        for t in ls do
+            let tagged = 
+                match t with
+                | Layout.TaggedText.Comment t -> TaggedText(TextTags.Text, t)
+                | Layout.TaggedText.Identifier t -> TaggedText(TextTags.Parameter, t) // TODO
+                | Layout.TaggedText.String t -> TaggedText(TextTags.StringLiteral, t)
+                | Layout.TaggedText.Keyword t -> TaggedText(TextTags.Keyword, t)
+                | Layout.TaggedText.Number t -> TaggedText(TextTags.NumericLiteral, t)
+                | Layout.TaggedText.Punctuation t -> TaggedText(TextTags.Punctuation, t)
+                | Layout.TaggedText.Text t -> TaggedText(TextTags.Text, t)
+                | Layout.TaggedText.Type t -> TaggedText(TextTags.Class, t) // TODO
+            result.Add(tagged)
+        upcast result
+
     let StartAsyncAsTask cancellationToken computation =
         let computation =
             async {
