@@ -61,7 +61,12 @@ neg10.fs(131,23,131,29): typecheck error FS0906: Type abbreviations cannot have 
 
 neg10.fs(169,32,169,35): typecheck error FS0035: This construct is deprecated: This form of object expression is not used in F#. Use 'member this.MemberName ... = ...' to define member implementations in object expressions.
 
-neg10.fs(169,32,169,33): typecheck error FS0017: The member 'X : unit -> 'a' does not have the correct type to override any given virtual method
+neg10.fs(169,32,169,33): typecheck error FS3213: The member 'X : unit -> 'a' matches multiple overloads of the same method.
+Please restrict it to one of the following:
+
+   X : unit -> 'a
+
+   X : unit -> 'a.
 
 neg10.fs(169,19,169,26): typecheck error FS0783: At least one override did not correctly implement its corresponding abstract member
 
@@ -257,4 +262,4 @@ neg10.fs(456,24,456,25): typecheck error FS0001: The type 'C' does not support a
 
 neg10.fs(457,26,457,27): typecheck error FS0001: The type 'C' does not support a conversion to the type 'decimal'
 
-neg10.fsi(1,1,1,81): typecheck error FS0240: The signature file 'Neg10' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.
+neg10.fsi(1,1,1,1): typecheck error FS0240: The signature file 'Neg10' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.
