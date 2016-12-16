@@ -658,6 +658,7 @@ val fullDisplayTextOfValRef   : ValRef -> string
 val fullDisplayTextOfValRefAsLayout   : ValRef -> StructuredFormat.Layout
 val fullDisplayTextOfTyconRef  : TyconRef -> string
 val fullDisplayTextOfExnRef  : TyconRef -> string
+val fullDisplayTextOfExnRefAsLayout  : TyconRef -> StructuredFormat.Layout
 val fullDisplayTextOfUnionCaseRef  : UnionCaseRef -> string
 val fullDisplayTextOfRecdFieldRef  : RecdFieldRef -> string
 

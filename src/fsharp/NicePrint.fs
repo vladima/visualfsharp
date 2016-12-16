@@ -1203,8 +1203,10 @@ module private PrintTastMemberOrVals =
 let layoutMemberSig denv x       = x |> PrintTypes.layoutMemberSig denv 
 let layoutTyparConstraint denv x = x |> PrintTypes.layoutTyparConstraint denv 
 let outputTy denv os x           = x |> PrintTypes.layoutType denv |> bufferL os  
+let layoutTy denv x           = x |> PrintTypes.layoutType denv
 let outputTypars denv nm os x    = x |> PrintTypes.layoutTyparDecls denv  (wordL nm) true  |> bufferL os
 let outputTyconRef denv os x     = x |> PrintTypes.layoutTyconRef denv |> bufferL os    
+let layoutTyconRef denv x     = x |> PrintTypes.layoutTyconRef denv
 let layoutConst g ty c = PrintTypes.layoutConst g ty c
 let layoutPrettifiedTypeAndConstraints denv argInfos tau = PrintTypes.layoutPrettifiedTypeAndConstraints denv argInfos tau
 
@@ -1952,8 +1954,10 @@ let stringOfMethInfo amap m denv d = bufs (fun buf -> InfoMemberPrinting.formatM
 let stringOfParamData denv paramData = bufs (fun buf -> InfoMemberPrinting.formatParamDataToBuffer denv buf paramData)
 let outputILTypeRef         denv os x = x |> PrintIL.layoutILTypeRef denv |> bufferL os
 let outputExnDef            denv os x = x |> TastDefinitionPrinting.layoutExnDefn denv |> bufferL os
+let layoutExnDef            denv x = x |> TastDefinitionPrinting.layoutExnDefn denv
 let stringOfTyparConstraints denv x   = x |> PrintTypes.layoutConstraintsWithInfo denv SimplifyTypes.typeSimplificationInfo0  |> showL
 let outputTycon             denv infoReader ad m (* width *) os x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true (wordL (tagKeyword "type")) x (* |> Layout.squashTo width *) |>  bufferL os
+let layoutUnionCases        denv x    = x |> TastDefinitionPrinting.layoutUnionCaseFields denv true
 let outputUnionCases        denv os x    = x |> TastDefinitionPrinting.layoutUnionCaseFields denv true |> bufferL os
 /// Pass negative number as pos in case of single cased discriminated unions
 let isGeneratedUnionCaseField pos f     = TastDefinitionPrinting.isGeneratedUnionCaseField pos f

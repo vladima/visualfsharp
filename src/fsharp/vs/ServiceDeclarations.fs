@@ -738,26 +738,33 @@ module internal ItemDescriptionsImpl =
             let uc = ucinfo.UnionCase 
             let rty = generalizedTyconRef ucinfo.TyconRef
             let recd = uc.RecdFields 
-            let text = 
-                bufs (fun os -> 
-                    bprintf os "%s "  (FSComp.SR.typeInfoUnionCase())
-                    NicePrint.outputTyconRef denv os ucinfo.TyconRef
-                    bprintf os ".%s: "  
-                        (DecompileOpName uc.Id.idText) 
-                    if not (List.isEmpty recd) then
-                        NicePrint.outputUnionCases denv os recd
-                        os.Append (" -> ") |> ignore
-                    NicePrint.outputTy denv os rty )
+            let layout = 
+                wordL (tagKeyword (FSComp.SR.typeInfoUnionCase())) ^^
+                wordL (tagText " ") ^^
+                NicePrint.layoutTyconRef denv ucinfo.TyconRef ^^
+                wordL (tagPunctuation ".") ^^
+                wordL (tagIdentifier (DecompileOpName uc.Id.idText)) ^^
+                wordL (tagPunctuation ":") ^^
+                wordL (tagText " ") ^^
+                (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv recd) ^^
+                wordL (tagText " ") ^^
+                wordL (tagPunctuation "->") ^^
+                wordL (tagText " ") ^^
+                NicePrint.layoutTy denv rty
 
-            FSharpToolTipElement.Single(text, xml)
+            FSharpToolTipElement.Single(layout, xml)
 
         // Active pattern tag inside the declaration (result)             
         | Item.ActivePatternResult(apinfo, ty, idx, _) ->
             let items = apinfo.ActiveTags
-            let text = bufs (fun os -> 
-                bprintf os "%s %s: " (FSComp.SR.typeInfoActivePatternResult()) (List.item idx items) 
-                NicePrint.outputTy denv os ty)
-            FSharpToolTipElement.Single(text, xml)
+            let layout = 
+                wordL (tagKeyword ((FSComp.SR.typeInfoActivePatternResult()))) ^^
+                wordL (tagText " ") ^^
+                wordL (tagIdentifier (List.item idx items)) ^^
+                wordL (tagPunctuation ":") ^^
+                wordL (tagText " ") ^^
+                NicePrint.layoutTy denv ty
+            FSharpToolTipElement.Single(layout, xml)
 
         // Active pattern tags 
         | Item.ActivePatternCase apref -> 
@@ -766,20 +773,22 @@ module internal ItemDescriptionsImpl =
             let _,tau = v.TypeScheme
             // REVIEW: use _cxs here
             let _, ptau, _cxs = PrettyTypes.PrettifyTypes1 denv.g tau
-            let text = 
-                bufs (fun os -> 
-                    bprintf os "%s %s: " (FSComp.SR.typeInfoActiveRecognizer())
-                        apref.Name
-                    NicePrint.outputTy denv os ptau 
-                    OutputFullName isDecl pubpath_of_vref fullDisplayTextOfValRef os v)
-            FSharpToolTipElement.Single(text, xml)
+            let layout =
+                wordL (tagKeyword (FSComp.SR.typeInfoActiveRecognizer())) ^^
+                wordL (tagText " ") ^^
+                wordL (tagIdentifier apref.Name) ^^
+                wordL (tagPunctuation ":") ^^
+                wordL (tagText " ") ^^
+                NicePrint.layoutTy denv ptau ^^
+                OutputFullName isDecl pubpath_of_vref fullDisplayTextOfValRefAsLayout v
+            FSharpToolTipElement.Single(layout, xml)
 
         // F# exception names
         | Item.ExnCase ecref -> 
-            let text =  bufs (fun os -> 
-                NicePrint.outputExnDef denv os ecref.Deref 
-                OutputFullName isDecl pubpath_of_tcref fullDisplayTextOfExnRef os ecref)
-            FSharpToolTipElement.Single(text, xml)
+            let layout =
+                NicePrint.layoutExnDef denv ecref.Deref ^^
+                OutputFullName isDecl pubpath_of_tcref fullDisplayTextOfExnRefAsLayout ecref
+            FSharpToolTipElement.Single(layout, xml)
 
         // F# record field names
         | Item.RecdField rfinfo ->
