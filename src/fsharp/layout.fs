@@ -33,7 +33,7 @@ let rec juxtRight = function
 
 // NOTE: emptyL might be better represented as a constructor, so then (Sep"") would have true meaning
 let emptyL = Leaf (true,TaggedText.Text "",true)
-let isEmptyL = function Leaf(true,tag,true) when unbox tag = "" -> true | _ -> false
+let isEmptyL = function Leaf(true,tag,true) when tag.Value = "" -> true | _ -> false
       
 let mkNode l r joint =
    if isEmptyL l then r else
