@@ -60,14 +60,30 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #else
     type TaggedText =
 #endif
-    | Keyword of string
-    | Identifier of string
-    | Text of string
-    | String of string
-    | Punctuation of string
-    | Comment of string
-    | Number of string
-    | Type of string
+        | Alias of string
+        | Class of string
+        | UnionCase of string
+        | Delegate of string
+        | Enum of string
+        | Event of string
+        | Field of string
+        | Interface of string
+        | Keyword of string
+        | LineBreak of string
+        | Local of string
+        | Method of string
+        | Module of string
+        | Namespace of string
+        | NumericLiteral of string
+        | Operator of string
+        | Parameter of string
+        | Property of string
+        | Space of string
+        | StringLiteral of string
+        | Struct of string
+        | TypeParameter of string
+        | Text of string
+        | Punctuation of string
         with 
         member Value: string
         member Length: int
@@ -94,6 +110,52 @@ namespace Microsoft.FSharp.Text.StructuredFormat
      | Node of bool * Layout * bool * Layout * bool * Joint
      | Attr of string * (string * string) list * Layout
 #endif
+
+#if COMPILER 
+    module internal TaggedTextOps =
+#else
+    module TaggedTextOps =
+#endif
+        val tagAlias : string -> TaggedText
+        val tagClass : string -> TaggedText
+        val tagUnionCase : string -> TaggedText
+        val tagDelegate : string -> TaggedText
+        val tagEnum : string -> TaggedText
+        val tagEvent : string -> TaggedText
+        val tagField : string -> TaggedText
+        val tagInterface : string -> TaggedText
+        val tagKeyword : string -> TaggedText
+        val tagLineBreak : string -> TaggedText
+        val tagLocal : string -> TaggedText
+        val tagMethod : string -> TaggedText
+        val tagModule : string -> TaggedText
+        val tagNamespace : string -> TaggedText
+        val tagNumericLiteral : string -> TaggedText
+        val tagOperator : string -> TaggedText
+        val tagParameter : string -> TaggedText
+        val tagProperty : string -> TaggedText
+        val tagSpace : string -> TaggedText
+        val tagStringLiteral : string -> TaggedText
+        val tagStruct : string -> TaggedText
+        val tagTypeParameter : string -> TaggedText
+        val tagText : string -> TaggedText
+        val tagPunctuation : string -> TaggedText
+
+        module Literals =
+            // common tagged literals
+            val lineBreak : TaggedText
+            val space : TaggedText
+            val comma : TaggedText
+            val semicolon : TaggedText
+            val leftParen : TaggedText
+            val rightParen : TaggedText
+            val leftBracket : TaggedText
+            val rightBracket : TaggedText
+            val leftBrace: TaggedText
+            val rightBrace : TaggedText
+            val equals : TaggedText
+            val arrow : TaggedText
+            val questionMark : TaggedText
 
 
 #if RUNTIME   // FSharp.Core.dll doesn't use PrintIntercepts
@@ -135,15 +197,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         val emptyL     : Layout
         /// Is it the empty layout?
         val isEmptyL   : layout:Layout -> bool
-
-        val tagKeyword:     s: string -> TaggedText
-        val tagIdentifier:  s: string -> TaggedText
-        val tagPunctuation: s: string -> TaggedText
-        val tagNumber:      s: string -> TaggedText
-        val tagString:      s: string -> TaggedText
-        val tagType:        s: string -> TaggedText
-        val tagText:        s: string -> TaggedText
-        val tagComment:     s: string -> TaggedText
 
         /// An uninterpreted leaf, to be interpreted into a string
         /// by the layout engine. This allows leaf layouts for numbers, strings and
