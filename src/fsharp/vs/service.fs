@@ -1233,7 +1233,7 @@ type TypeCheckInfo
             match matches with 
             | resolved::_ // Take the first seen
             | [resolved] -> 
-                let tip = wordL (tagString((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
+                let tip = wordL (TaggedTextOps.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
                 FSharpToolTipText [FSharpToolTipElement.Single(tip ,FSharpXmlDoc.None)]
 
             | [] -> FSharpToolTipText []

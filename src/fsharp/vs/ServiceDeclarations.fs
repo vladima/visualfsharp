@@ -22,6 +22,7 @@ open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Layout
+open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.Range
@@ -33,7 +34,7 @@ open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons 
 
-type internal Layout = Internal.Utilities.StructuredFormat.Layout
+type internal Layout = layout
 
 module EnvMisc2 =
     let maxMembers   = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10
@@ -94,11 +95,7 @@ module internal ItemDescriptionsImpl =
         match ppF r with 
         | None -> emptyL
         | Some _ -> 
-            wordL (tagText "\n\n") ^^
-            wordL (tagIdentifier (FSComp.SR.typeInfoFullName())) ^^
-            wordL (tagPunctuation ":") ^^
-            wordL (tagText " ") ^^
-            (fnF r)
+            wordL (tagLineBreak "\n\n") ^^ wordL (tagText (FSComp.SR.typeInfoFullName())) ^^ RightL.colon ^^ (fnF r)
        else emptyL
             //bprintf os "\n\n%s: %s" (FSComp.SR.typeInfoFullName()) (fnF r)
           
@@ -741,17 +738,13 @@ module internal ItemDescriptionsImpl =
             let rty = generalizedTyconRef ucinfo.TyconRef
             let recd = uc.RecdFields 
             let layout = 
-                wordL (tagKeyword (FSComp.SR.typeInfoUnionCase())) ^^
-                wordL (tagText " ") ^^
+                wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
                 NicePrint.layoutTyconRef denv ucinfo.TyconRef ^^
-                wordL (tagPunctuation ".") ^^
-                wordL (tagIdentifier (DecompileOpName uc.Id.idText)) ^^
-                wordL (tagPunctuation ":") ^^
-                wordL (tagText " ") ^^
+                sepL (tagPunctuation ".") ^^
+                wordL (tagUnionCase (DecompileOpName uc.Id.idText)) ^^
+                RightL.colon ^^
                 (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv recd) ^^
-                wordL (tagText " ") ^^
-                wordL (tagPunctuation "->") ^^
-                wordL (tagText " ") ^^
+                WordL.arrow ^^
                 NicePrint.layoutTy denv rty
 
             FSharpToolTipElement.Single(layout, xml)
@@ -760,11 +753,9 @@ module internal ItemDescriptionsImpl =
         | Item.ActivePatternResult(apinfo, ty, idx, _) ->
             let items = apinfo.ActiveTags
             let layout = 
-                wordL (tagKeyword ((FSComp.SR.typeInfoActivePatternResult()))) ^^
-                wordL (tagText " ") ^^
-                wordL (tagIdentifier (List.item idx items)) ^^
-                wordL (tagPunctuation ":") ^^
-                wordL (tagText " ") ^^
+                wordL (tagText ((FSComp.SR.typeInfoActivePatternResult()))) ^^
+                wordL (tagActivePatternResult (List.item idx items)) ^^
+                RightL.colon ^^
                 NicePrint.layoutTy denv ty
             FSharpToolTipElement.Single(layout, xml)
 
@@ -776,11 +767,9 @@ module internal ItemDescriptionsImpl =
             // REVIEW: use _cxs here
             let _, ptau, _cxs = PrettyTypes.PrettifyTypes1 denv.g tau
             let layout =
-                wordL (tagKeyword (FSComp.SR.typeInfoActiveRecognizer())) ^^
-                wordL (tagText " ") ^^
-                wordL (tagIdentifier apref.Name) ^^
-                wordL (tagPunctuation ":") ^^
-                wordL (tagText " ") ^^
+                wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
+                wordL (tagActivePatternCase apref.Name) ^^
+                RightL.colon ^^
                 NicePrint.layoutTy denv ptau ^^
                 OutputFullName isDecl pubpath_of_vref fullDisplayTextOfValRefAsLayout v
             FSharpToolTipElement.Single(layout, xml)
@@ -798,10 +787,9 @@ module internal ItemDescriptionsImpl =
             let _, ty, _cxs = PrettyTypes.PrettifyTypes1 g rfinfo.FieldType
             let layout = 
                 NicePrint.layoutTyconRef denv rfinfo.TyconRef ^^
-                wordL (tagPunctuation ".") ^^
-                wordL (tagIdentifier (DecompileOpName rfield.Name)) ^^
-                wordL (tagPunctuation ":") ^^
-                wordL (tagText " ") ^^
+                SepL.dot ^^
+                wordL (tagRecordField (DecompileOpName rfield.Name)) ^^
+                RightL.colon ^^
                 NicePrint.layoutTy denv ty ^^
                 (
                     match rfinfo.LiteralValue with
@@ -813,26 +801,22 @@ module internal ItemDescriptionsImpl =
         // Not used
         | Item.NewDef id -> 
             let layout = 
-                wordL (tagKeyword (FSComp.SR.typeInfoPatternVariable())) ^^
-                wordL (tagText " ") ^^
-                wordL (tagIdentifier id.idText)
+                wordL (tagText (FSComp.SR.typeInfoPatternVariable())) ^^
+                wordL (tagUnknownEntity id.idText)
             FSharpToolTipElement.Single(layout, xml)
 
         // .NET fields
         | Item.ILField finfo ->
             let layout = 
-                wordL (tagKeyword (FSComp.SR.typeInfoField())) ^^
-                wordL (tagText " ") ^^
+                wordL (tagText (FSComp.SR.typeInfoField())) ^^
                 NicePrint.layoutILTypeRef denv finfo.ILTypeRef ^^
-                wordL (tagPunctuation ".") ^^
-                wordL (tagIdentifier finfo.FieldName) ^^
+                SepL.dot ^^
+                wordL (tagField finfo.FieldName) ^^
                 (
                     match finfo.LiteralValue with
                     | None -> emptyL
                     | Some v ->
-                        wordL (tagText " ") ^^
                         wordL (tagPunctuation "=") ^^
-                        wordL (tagText " ") ^^
                         try NicePrint.layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (TypeChecker.TcFieldInit m v) with _ -> emptyL
                 )
             FSharpToolTipElement.Single(layout, xml)
@@ -842,13 +826,11 @@ module internal ItemDescriptionsImpl =
             let rty = PropTypOfEventInfo infoReader m AccessibleFromSomewhere einfo
             let _,rty, _cxs = PrettyTypes.PrettifyTypes1 g rty
             let layout =
-                wordL (tagKeyword (FSComp.SR.typeInfoEvent())) ^^
-                wordL (tagText " ") ^^
+                wordL (tagText (FSComp.SR.typeInfoEvent())) ^^
                 NicePrint.layoutTyconRef denv (tcrefOfAppTy g einfo.EnclosingType) ^^
-                wordL (tagPunctuation ".") ^^
-                wordL (tagIdentifier einfo.EventName) ^^
-                wordL (tagPunctuation ":") ^^
-                wordL (tagText " ") ^^
+                SepL.dot ^^
+                wordL (tagEvent einfo.EventName) ^^
+                RightL.colon ^^
                 NicePrint.layoutTy denv rty
             FSharpToolTipElement.Single(layout, xml)
 
@@ -859,13 +841,11 @@ module internal ItemDescriptionsImpl =
             let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty 
             let _, rty, _ = PrettyTypes.PrettifyTypes1 g rty
             let layout =
-                wordL (tagKeyword (FSComp.SR.typeInfoProperty())) ^^
-                wordL (tagText " ") ^^
+                wordL (tagText (FSComp.SR.typeInfoProperty())) ^^
                 NicePrint.layoutTyconRef denv (tcrefOfAppTy g pinfo.EnclosingType) ^^
-                wordL (tagPunctuation ".") ^^
-                wordL (tagIdentifier pinfo.PropertyName) ^^
-                wordL (tagPunctuation ":") ^^
-                wordL (tagText " ") ^^
+                SepL.dot ^^
+                wordL (tagProperty pinfo.PropertyName) ^^
+                RightL.colon ^^
                 NicePrint.layoutTy denv rty
 
             FSharpToolTipElement.Single(layout, xml)
@@ -877,26 +857,20 @@ module internal ItemDescriptionsImpl =
             //        
             //        Calls QueryBuilder.Where'
             let layout = 
-                wordL (tagKeyword (FSComp.SR.typeInfoCustomOperation())) ^^
-                wordL (tagPunctuation ":") ^^
-                wordL (tagText " ") ^^
+                wordL (tagText (FSComp.SR.typeInfoCustomOperation())) ^^
+                RightL.colon ^^
                 (
                     match usageText() with
                     | Some t -> wordL (tagText t)
                     | None ->
                         let argTys = ParamNameAndTypesOfUnaryCustomOperation g minfo |> List.map (fun (ParamNameAndType(_,ty)) -> ty)
                         let _, argTys, _ = PrettyTypes.PrettifyTypesN g argTys 
-                        let argLs =
-                            wordL (tagPunctuation "(") ^^
-                            sepListL (wordL (tagPunctuation ",")) (List.map (NicePrint.layoutTy denv) argTys) ^^
-                            wordL (tagPunctuation ")")
-                        wordL (tagIdentifier customOpName) ^^
-                        argLs
+                        wordL (tagMethod customOpName) ^^ LeftL.leftParen ^^ sepListL SepL.comma (List.map (NicePrint.layoutTy denv) argTys) ^^ RightL.rightParen
                 ) ^^
                 wordL (tagText (sprintf "\n\n%s" (FSComp.SR.typeInfoCallsWord()) )) ^^
                 NicePrint.layoutTyconRef denv (tcrefOfAppTy g minfo.EnclosingType) ^^
-                wordL (tagPunctuation ".") ^^
-                wordL (tagIdentifier minfo.DisplayName)
+                SepL.dot ^^
+                wordL (tagMethod minfo.DisplayName)
 
             //let text =
             //    bufs (fun os -> 
@@ -942,9 +916,9 @@ module internal ItemDescriptionsImpl =
            let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
            let layout =
                NicePrint.layoutTyconRef denv (tcrefOfAppTy g delty) ^^
-               wordL (tagPunctuation "(") ^^
+               LeftL.leftParen ^^
                NicePrint.layoutTy denv fty ^^
-               wordL (tagPunctuation ")")
+               RightL.rightParen
            FSharpToolTipElement.Single(layout, xml)
 
         // Types.
@@ -966,16 +940,15 @@ module internal ItemDescriptionsImpl =
                 else FSComp.SR.typeInfoNamespaceOrModule()
             
             let layout = 
-                wordL (tagKeyword kind) ^^
-                wordL (tagText " ") ^^
-                wordL (tagIdentifier (if definiteNamespace then fullDisplayTextOfModRef modref else modref.DemangledModuleOrNamespaceName))
+                wordL (tagText kind) ^^
+                wordL (if definiteNamespace then tagNamespace (fullDisplayTextOfModRef modref) else (tagModule modref.DemangledModuleOrNamespaceName))
             //bprintf os "%s %s" kind (if definiteNamespace then fullDisplayTextOfModRef modref else modref.DemangledModuleOrNamespaceName)
             if not definiteNamespace then
                 let namesToAdd = 
                     ([],modrefs) 
                     ||> Seq.fold (fun st modref -> 
                         match fullDisplayTextOfParentOfModRef modref with 
-                        | Some(txt) -> txt::st 
+                        | Some(txt) -> (txt, modref.IsNamespace)::st 
                         | _ -> st) 
                     |> Seq.mapi (fun i x -> i,x) 
                     |> Seq.toList
@@ -983,11 +956,11 @@ module internal ItemDescriptionsImpl =
                     layout ^^
                     (
                         if not (List.isEmpty namesToAdd) then
-                            wordL (tagText "\n") ^^
-                            List.fold ( fun s (i, txt) ->
+                            wordL (tagLineBreak "\n") ^^
+                            List.fold ( fun s (i, (txt, isNamespace)) ->
                                 s ^^
-                                wordL (tagText "\n") ^^
-                                wordL (tagIdentifier ((if i = 0 then FSComp.SR.typeInfoFromFirst else FSComp.SR.typeInfoFromNext) txt))
+                                wordL (tagLineBreak "\n") ^^
+                                wordL ((if isNamespace then tagNamespace else tagModule) ((if i = 0 then FSComp.SR.typeInfoFromFirst else FSComp.SR.typeInfoFromNext) txt))
                             ) emptyL namesToAdd 
                         else 
                             emptyL
@@ -1004,12 +977,9 @@ module internal ItemDescriptionsImpl =
         | Item.ArgName (id, argTy, _) -> 
             let _, argTy, _ = PrettyTypes.PrettifyTypes1 g argTy
             let layout =
-                wordL (tagKeyword (FSComp.SR.typeInfoArgument())) ^^
-                wordL (tagText " ") ^^
-                wordL (tagIdentifier id.idText) ^^
-                wordL (tagText " ") ^^
-                wordL (tagPunctuation ":") ^^
-                wordL (tagText " ") ^^
+                wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
+                wordL (tagParameter id.idText) ^^
+                RightL.colon ^^
                 NicePrint.layoutTy denv argTy
             FSharpToolTipElement.SingleParameter(layout, xml, id.idText)
             

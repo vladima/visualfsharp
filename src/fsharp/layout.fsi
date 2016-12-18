@@ -48,6 +48,8 @@ val outL                  : TextWriter -> Layout -> unit
 val bufferL               : StringBuilder -> Layout -> unit
 
 module TaggedTextOps =
+    val tagActivePatternCase : (string -> TaggedText)
+    val tagActivePatternResult : (string -> TaggedText)
     val tagAlias : (string -> TaggedText)
     val tagClass : (string -> TaggedText)
     val tagUnion : (string -> TaggedText)

@@ -54,6 +54,8 @@ let rightL (str:TaggedText) = Leaf (true ,str,false)
 let leftL  (str:TaggedText) = Leaf (false,str,true)
 
 module TaggedTextOps =
+    let tagActivePatternCase = Internal.Utilities.StructuredFormat.TaggedText.ActivePatternCase
+    let tagActivePatternResult = Internal.Utilities.StructuredFormat.TaggedText.ActivePatternResult
     let tagAlias = Internal.Utilities.StructuredFormat.TaggedTextOps.tagAlias
     let tagClass = Internal.Utilities.StructuredFormat.TaggedTextOps.tagClass
     let tagUnion = Internal.Utilities.StructuredFormat.TaggedText.Union

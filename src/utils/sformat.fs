@@ -58,6 +58,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #else
     type TaggedText =
 #endif
+        | ActivePatternCase of string
+        | ActivePatternResult of string
         | Alias of string
         | Class of string
         | Union of string
@@ -92,6 +94,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         with 
         member this.Value = 
             match this with 
+            | ActivePatternCase t
+            | ActivePatternResult t
             | Alias t
             | Class t
             | Union t
