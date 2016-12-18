@@ -650,6 +650,7 @@ type DisplayEnv =
     member AddOpenPath : string list  -> DisplayEnv
     member AddOpenModuleOrNamespace : ModuleOrNamespaceRef   -> DisplayEnv
 
+val tagEntityRefName: xref: EntityRef -> name: string -> StructuredFormat.TaggedText
 
 /// Return the full text for an item as we want it displayed to the user as a fully qualified entity
 val fullDisplayTextOfModRef : ModuleOrNamespaceRef -> string

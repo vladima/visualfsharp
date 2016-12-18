@@ -5,9 +5,11 @@ module internal Microsoft.FSharp.Compiler.Layout
 open System.Text
 open System.IO
 open Internal.Utilities.StructuredFormat
+open Internal.Utilities.StructuredFormat.TaggedTextOps
 
 type layout = Internal.Utilities.StructuredFormat.Layout
 type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
+module TaggedTextOps = Internal.Utilities.StructuredFormat.TaggedTextOps
 
 val emptyL                : Layout
 val isEmptyL              : Layout -> bool
@@ -16,14 +18,6 @@ val wordL                 : TaggedText -> Layout
 val sepL                  : TaggedText -> Layout
 val rightL                : TaggedText -> Layout
 val leftL                 : TaggedText -> Layout
-val tagKeyword:     s: string -> TaggedText
-val tagIdentifier:  s: string -> TaggedText
-val tagPunctuation: s: string -> TaggedText
-val tagNumber:      s: string -> TaggedText
-val tagString:      s: string -> TaggedText
-val tagType:        s: string -> TaggedText
-val tagText:        s: string -> TaggedText
-val tagComment:     s: string -> TaggedText
 val ( ^^ )                : Layout -> Layout -> Layout   (* never break "glue" *)
 val ( ++ )                : Layout -> Layout -> Layout   (* if break, indent=0 *)
 val ( -- )                : Layout -> Layout -> Layout   (* if break, indent=1 *)
@@ -52,6 +46,79 @@ val squashTo              : int -> Layout -> Layout
 val showL                 : Layout -> string
 val outL                  : TextWriter -> Layout -> unit
 val bufferL               : StringBuilder -> Layout -> unit
+
+module TaggedTextOps =
+    val tagAlias : (string -> TaggedText)
+    val tagClass : (string -> TaggedText)
+    val tagUnion : (string -> TaggedText)
+    val tagUnionCase : (string -> TaggedText)
+    val tagDelegate : (string -> TaggedText)
+    val tagEnum : (string -> TaggedText)
+    val tagEvent : (string -> TaggedText)
+    val tagField : (string -> TaggedText)
+    val tagInterface : (string -> TaggedText)
+    val tagKeyword : (string -> TaggedText)
+    val tagLineBreak : (string -> TaggedText)
+    val tagMethod : (string -> TaggedText)
+    val tagLocal : (string -> TaggedText)
+    val tagRecord : (string -> TaggedText)
+    val tagRecordField : (string -> TaggedText)
+    val tagModule : (string -> TaggedText)
+    val tagModuleBinding : (string -> TaggedText)
+    val tagMember : (string -> TaggedText)
+    val tagNamespace : (string -> TaggedText)
+    val tagNumericLiteral : (string -> TaggedText)
+    val tagOperator : (string -> TaggedText)
+    val tagParameter : (string -> TaggedText)
+    val tagProperty : (string -> TaggedText)
+    val tagSpace : (string -> TaggedText)
+    val tagStringLiteral : (string -> TaggedText)
+    val tagStruct : (string -> TaggedText)
+    val tagTypeParameter : (string -> TaggedText)
+    val tagText : (string -> TaggedText)
+    val tagPunctuation : (string -> TaggedText)
+    val tagUnknownEntity : (string -> TaggedText)
+    val tagUnknownType : (string -> TaggedText)
+
+    module Literals =
+        // common tagged literals
+        val lineBreak : TaggedText
+        val space : TaggedText
+        val comma : TaggedText
+        val semicolon : TaggedText
+        val leftParen : TaggedText
+        val rightParen : TaggedText
+        val leftBracket : TaggedText
+        val rightBracket : TaggedText
+        val leftBrace: TaggedText
+        val rightBrace : TaggedText
+        val leftAngle: TaggedText
+        val rightAngle: TaggedText
+        val equals : TaggedText
+        val arrow : TaggedText
+        val questionMark : TaggedText
+        val colon: TaggedText
+
+module SepL =
+    val dot: Layout
+    val star: Layout
+    val colon: Layout
+    val questionMark: Layout
+    val leftParen: Layout
+    val comma: Layout
+
+module WordL =
+    val arrow: Layout
+    val star: Layout
+    val colon: Layout
+
+module LeftL =
+    val leftParen: Layout
+
+module RightL =
+    val comma: Layout
+    val rightParen: Layout
+    val colon: Layout
 
 /// render a Layout yielding an 'a using a 'b (hidden state) type 
 type LayoutRenderer<'a,'b> =

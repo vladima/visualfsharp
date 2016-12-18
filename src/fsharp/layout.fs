@@ -53,14 +53,83 @@ let sepL   (str:TaggedText) = Leaf (true ,str,true)
 let rightL (str:TaggedText) = Leaf (true ,str,false)   
 let leftL  (str:TaggedText) = Leaf (false,str,true)
 
-let tagKeyword = TaggedText.Keyword
-let tagIdentifier = TaggedText.Identifier
-let tagPunctuation = TaggedText.Punctuation
-let tagNumber = TaggedText.Number
-let tagString = TaggedText.String
-let tagType = TaggedText.Type
-let tagText = TaggedText.Text
-let tagComment = TaggedText.Comment
+module TaggedTextOps =
+    let tagAlias = Internal.Utilities.StructuredFormat.TaggedTextOps.tagAlias
+    let tagClass = Internal.Utilities.StructuredFormat.TaggedTextOps.tagClass
+    let tagUnion = Internal.Utilities.StructuredFormat.TaggedText.Union
+    let tagUnionCase = Internal.Utilities.StructuredFormat.TaggedTextOps.tagUnionCase
+    let tagDelegate = Internal.Utilities.StructuredFormat.TaggedTextOps.tagDelegate
+    let tagEnum = Internal.Utilities.StructuredFormat.TaggedTextOps.tagEnum
+    let tagEvent = Internal.Utilities.StructuredFormat.TaggedTextOps.tagEvent
+    let tagField = Internal.Utilities.StructuredFormat.TaggedTextOps.tagField
+    let tagInterface = Internal.Utilities.StructuredFormat.TaggedTextOps.tagInterface
+    let tagKeyword = Internal.Utilities.StructuredFormat.TaggedTextOps.tagKeyword
+    let tagLineBreak = Internal.Utilities.StructuredFormat.TaggedTextOps.tagLineBreak
+    let tagLocal = Internal.Utilities.StructuredFormat.TaggedTextOps.tagLocal
+    let tagRecord = Internal.Utilities.StructuredFormat.TaggedTextOps.tagRecord
+    let tagRecordField = Internal.Utilities.StructuredFormat.TaggedTextOps.tagRecordField
+    let tagMethod = Internal.Utilities.StructuredFormat.TaggedTextOps.tagMethod
+    let tagMember = Internal.Utilities.StructuredFormat.TaggedText.Member
+    let tagModule = Internal.Utilities.StructuredFormat.TaggedTextOps.tagModule
+    let tagModuleBinding = Internal.Utilities.StructuredFormat.TaggedTextOps.tagModuleBinding
+    let tagNamespace = Internal.Utilities.StructuredFormat.TaggedTextOps.tagNamespace
+    let tagNumericLiteral = Internal.Utilities.StructuredFormat.TaggedTextOps.tagNumericLiteral
+    let tagOperator = Internal.Utilities.StructuredFormat.TaggedTextOps.tagOperator
+    let tagParameter = Internal.Utilities.StructuredFormat.TaggedTextOps.tagParameter
+    let tagProperty = Internal.Utilities.StructuredFormat.TaggedTextOps.tagProperty
+    let tagSpace = Internal.Utilities.StructuredFormat.TaggedTextOps.tagSpace
+    let tagStringLiteral = Internal.Utilities.StructuredFormat.TaggedTextOps.tagStringLiteral
+    let tagStruct = Internal.Utilities.StructuredFormat.TaggedTextOps.tagStruct
+    let tagTypeParameter = Internal.Utilities.StructuredFormat.TaggedTextOps.tagTypeParameter
+    let tagText = Internal.Utilities.StructuredFormat.TaggedTextOps.tagText
+    let tagPunctuation = Internal.Utilities.StructuredFormat.TaggedTextOps.tagPunctuation
+    let tagUnknownEntity = Internal.Utilities.StructuredFormat.TaggedText.UnknownEntity
+    let tagUnknownType = Internal.Utilities.StructuredFormat.TaggedText.UnknownType
+
+    module Literals =
+        // common tagged literals
+        let lineBreak = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.lineBreak
+        let space = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.space
+        let comma = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.comma
+        let semicolon = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.semicolon
+        let leftParen = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.leftParen
+        let rightParen = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.rightParen
+        let leftBracket = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.leftBracket
+        let rightBracket = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.rightBracket
+        let leftBrace = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.leftBrace
+        let rightBrace = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.rightBrace
+        let equals = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.equals
+        let arrow = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.arrow
+        let questionMark = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.questionMark
+        let dot = tagPunctuation "."
+        let leftAngle = tagPunctuation "<"
+        let rightAngle = tagPunctuation ">"
+        let star = tagOperator "*"
+        let colon = tagPunctuation ":"
+
+open TaggedTextOps
+
+module SepL =
+    let dot = sepL Literals.dot
+    let star = sepL Literals.star
+    let colon = sepL Literals.colon
+    let questionMark = sepL Literals.questionMark
+    let leftParen = sepL Literals.leftParen
+    let comma = sepL Literals.comma
+
+module WordL =
+    let arrow = wordL Literals.arrow
+    let star = wordL Literals.star
+    let colon = wordL Literals.colon
+
+module LeftL =
+    let leftParen = leftL Literals.leftParen
+
+module RightL =
+    let comma = rightL Literals.comma
+    let rightParen = rightL Literals.rightParen
+    let colon = rightL Literals.colon
+
 let aboveL  l r = mkNode l r (Broken 0)
 
 let tagAttrL str attrs ly = Attr (str,attrs,ly)
@@ -90,24 +159,24 @@ let tagListL tagger = function
       | []    -> prefixL
       | y::ys -> process' ((tagger prefixL) ++ y) ys in
       process' x xs
-    
-let commaListL x = tagListL (fun prefixL -> prefixL ^^ rightL (TaggedText.Punctuation ",")) x
-let semiListL x  = tagListL (fun prefixL -> prefixL ^^ rightL (TaggedText.Punctuation ";")) x
+
+let commaListL x = tagListL (fun prefixL -> prefixL ^^ rightL Literals.comma) x
+let semiListL x  = tagListL (fun prefixL -> prefixL ^^ rightL Literals.semicolon) x
 let spaceListL x = tagListL (fun prefixL -> prefixL) x
 let sepListL x y = tagListL (fun prefixL -> prefixL ^^ x) y
 
-let bracketL l = leftL (TaggedText.Punctuation "(") ^^ l ^^ rightL (TaggedText.Punctuation ")")
-let tupleL xs = bracketL (sepListL (sepL (TaggedText.Punctuation ",")) xs)
+let bracketL l = leftL Literals.leftParen ^^ l ^^ rightL Literals.rightParen
+let tupleL xs = bracketL (sepListL (sepL Literals.comma) xs)
 let aboveListL = function
   | []    -> emptyL
   | [x]   -> x
   | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
 
 let optionL xL = function
-  | None   -> wordL (TaggedText.Identifier "None")
-  | Some x -> wordL (TaggedText.Identifier "Some") -- (xL x)
+  | None   -> wordL (tagUnionCase "None")
+  | Some x -> wordL (tagUnionCase "Some") -- (xL x)
 
-let listL xL xs = leftL (TaggedText.Punctuation "[") ^^ sepListL (sepL (TaggedText.Punctuation ";")) (List.map xL xs) ^^ rightL (TaggedText.Punctuation "]")
+let listL xL xs = leftL Literals.leftBracket ^^ sepListL (sepL Literals.semicolon) (List.map xL xs) ^^ rightL Literals.rightBracket
 
 
 //--------------------------------------------------------------------------
@@ -276,7 +345,7 @@ let taggedTextListR =
   { new LayoutRenderer<list<TaggedText>, list<TaggedText>> with 
       member x.Start () = []
       member x.AddText rstrs text =  text::rstrs
-      member x.AddBreak rstrs n = TaggedText.Text (spaces n) :: TaggedText.Text "\n" ::  rstrs 
+      member x.AddBreak rstrs n = TaggedText.Space (spaces n) :: Literals.lineBreak ::  rstrs 
       member x.AddTag z (_,_,_) = z
       member x.Finish rstrs = List.rev rstrs }
 

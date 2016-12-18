@@ -31,6 +31,7 @@ open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Layout
+open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
 open Microsoft.FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic

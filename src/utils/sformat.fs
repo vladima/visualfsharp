@@ -60,6 +60,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
         | Alias of string
         | Class of string
+        | Union of string
         | UnionCase of string
         | Delegate of string
         | Enum of string
@@ -69,7 +70,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | Keyword of string
         | LineBreak of string
         | Local of string
+        | Record of string
+        | RecordField of string
         | Method of string
+        | Member of string
+        | ModuleBinding of string
         | Module of string
         | Namespace of string
         | NumericLiteral of string
@@ -82,11 +87,14 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | TypeParameter of string
         | Text of string
         | Punctuation of string
+        | UnknownType of string
+        | UnknownEntity of string
         with 
         member this.Value = 
             match this with 
             | Alias t
             | Class t
+            | Union t
             | UnionCase t
             | Delegate t
             | Enum t
@@ -96,8 +104,12 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | Keyword t
             | LineBreak t
             | Local t
+            | Record t
+            | RecordField t
             | Method t
+            | Member t
             | Module t
+            | ModuleBinding t
             | Namespace t
             | NumericLiteral t
             | Operator t
@@ -108,7 +120,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | Struct t
             | TypeParameter t
             | Text t
-            | Punctuation t -> t
+            | Punctuation t
+            | UnknownType t
+            | UnknownEntity t -> t
         member this.Length = this.Value.Length
         static member GetText(t: TaggedText) = t.Value
     
@@ -186,8 +200,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let tagKeyword = TaggedText.Keyword
         let tagLineBreak = TaggedText.LineBreak
         let tagLocal = TaggedText.Local
+        let tagRecord = TaggedText.Record
+        let tagRecordField = TaggedText.RecordField
         let tagMethod = TaggedText.Method
         let tagModule = TaggedText.Module
+        let tagModuleBinding = TaggedText.ModuleBinding
         let tagNamespace = TaggedText.Namespace
         let tagNumericLiteral = TaggedText.NumericLiteral
         let tagOperator = TaggedText.Operator
@@ -212,7 +229,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             let rightBracket = tagPunctuation "]"
             let leftBrace= tagPunctuation "{"
             let rightBrace = tagPunctuation "}"
-            let equals = tagPunctuation "="
+            let equals = tagOperator "="
             let arrow = tagPunctuation "->"
             let questionMark = tagPunctuation "?"
      
@@ -294,8 +311,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
 
         let optionL xL = function
-          | None   -> wordL (tagProperty "None")
-          | Some x -> wordL (tagMethod "Some") -- (xL x)
+          | None   -> wordL (tagUnionCase "None")
+          | Some x -> wordL (tagUnionCase "Some") -- (xL x)
 
         let listL xL xs = leftL Literals.leftBracket ^^ sepListL (sepL Literals.semicolon) (List.map xL xs) ^^ rightL Literals.rightBracket
 
@@ -322,9 +339,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// These are a typical set of options used to control structured formatting.
     [<NoEquality; NoComparison>]
 #if COMPILER
-    type internal FormatOptions = 
+    type internal FormatOptions =
 #else
-    type FormatOptions = 
+    type FormatOptions =
 #endif
         { FloatingPointFormat: string;
           AttributeProcessor: (string -> (string * string) list -> bool -> unit);
@@ -1092,7 +1109,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                 | RecordValue items -> 
                     let itemL (name,x,typ) =
                       countNodes 1 // record labels are counted as nodes. [REVIEW: discussion under 4090].
-                      (tagProperty name,objL depthLim Precedence.BracketIfTuple (x, typ))
+                      (tagRecordField name,objL depthLim Precedence.BracketIfTuple (x, typ))
                     makeRecordL (List.map itemL items)
 
                 | ConstructorValue (constr,recd) when // x is List<T>. Note: "null" is never a valid list value. 

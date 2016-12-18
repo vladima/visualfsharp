@@ -62,6 +62,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
         | Alias of string
         | Class of string
+        | Union of string
         | UnionCase of string
         | Delegate of string
         | Enum of string
@@ -71,7 +72,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | Keyword of string
         | LineBreak of string
         | Local of string
+        | Record of string
+        | RecordField of string
         | Method of string
+        | Member of string
+        | ModuleBinding of string
         | Module of string
         | Namespace of string
         | NumericLiteral of string
@@ -84,6 +89,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | TypeParameter of string
         | Text of string
         | Punctuation of string
+        | UnknownType of string
+        | UnknownEntity of string
         with 
         member Value: string
         member Length: int
@@ -126,8 +133,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         val tagInterface : string -> TaggedText
         val tagKeyword : string -> TaggedText
         val tagLineBreak : string -> TaggedText
-        val tagLocal : string -> TaggedText
         val tagMethod : string -> TaggedText
+        val tagModuleBinding : string -> TaggedText
+        val tagLocal : string -> TaggedText
+        val tagRecord : string -> TaggedText
+        val tagRecordField : string -> TaggedText
         val tagModule : string -> TaggedText
         val tagNamespace : string -> TaggedText
         val tagNumericLiteral : string -> TaggedText

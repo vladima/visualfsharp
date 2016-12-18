@@ -20,11 +20,11 @@ open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Layout
+open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
 open Microsoft.FSharp.Compiler.PrettyNaming
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
-
 
 //---------------------------------------------------------------------------
 // Basic data structures
@@ -2472,8 +2472,7 @@ type DisplayEnv =
 let (+.+) s1 s2 = (if s1 = "" then s2 else s1+"."+s2)
 
 let layoutOfPath p =     
-    let sep = wordL (tagPunctuation ".")
-    sepListL sep (List.map (tagIdentifier >> wordL) p)
+    sepListL SepL.dot (List.map (tagNamespace >> wordL) p)
 
 let fullNameOfParentOfPubPath pp = 
     match pp with 
@@ -2517,14 +2516,23 @@ let fullNameOfEntityRef nmF xref =
     | None -> nmF xref 
     | Some pathText -> pathText +.+ nmF xref
 
-let fullNameOfEntityRefAsLayout nmF xref = 
-    let n = wordL (tagIdentifier (nmF xref))
+let tagEntityRefName (xref: EntityRef) name =
+    if xref.IsNamespace then tagNamespace name
+    else if xref.IsModule then tagModule name
+    else if xref.IsTypeAbbrev then tagAlias name
+    else if xref.IsFSharpDelegateTycon then tagDelegate name
+    else if xref.IsILEnumTycon || xref.IsFSharpEnumTycon then tagEnum name
+    else if xref.IsStructOrEnumTycon then tagStruct name
+    else if xref.IsFSharpInterfaceTycon then tagInterface name
+    else if xref.IsUnionTycon then tagUnion name
+    else if xref.IsRecordTycon then tagRecord name
+    else tagClass name
+
+let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
+    let n = wordL (tagEntityRefName xref (nmF xref))
     match fullNameOfParentOfEntityRefAsLayout xref  with 
     | None -> n
-    | Some pathText -> 
-        pathText ^^
-        wordL (tagPunctuation ".") ^^
-        n
+    | Some pathText -> pathText ^^ SepL.dot ^^ n
 
 let fullNameOfParentOfValRef vref = 
     match vref with 
@@ -2562,12 +2570,23 @@ let fullDisplayTextOfValRef   (vref:ValRef) =
     | Some pathText -> pathText +.+ vref.DisplayName
 
 let fullDisplayTextOfValRefAsLayout   (vref:ValRef) = 
+    let n =
+        match vref.MemberInfo with
+        | None -> 
+            if vref.IsModuleBinding then tagModuleBinding vref.DisplayName
+            else tagUnknownEntity vref.DisplayName
+        | Some memberInfo ->
+            match memberInfo.MemberFlags.MemberKind with
+            | MemberKind.PropertyGet
+            | MemberKind.PropertySet
+            | MemberKind.PropertyGetSet -> tagProperty vref.DisplayName
+            | MemberKind.ClassConstructor
+            | MemberKind.Constructor -> tagMethod vref.DisplayName
+            | MemberKind.Member -> tagMember vref.DisplayName
     match fullNameOfParentOfValRefAsLayout vref  with 
-    | None -> wordL (tagIdentifier vref.DisplayName) 
+    | None -> wordL n 
     | Some pathText -> 
-        pathText ^^
-        wordL (tagPunctuation ".") ^^
-        wordL (tagIdentifier vref.DisplayName)
+        pathText ^^ SepL.dot ^^ wordL n
         //pathText +.+ vref.DisplayName
 
 
@@ -2901,12 +2920,12 @@ module DebugPrint = begin
     let layoutRanges = ref false  
 
     let squareAngleL x = leftL  (tagPunctuation "[<") ^^ x ^^ rightL (tagPunctuation ">]")
-    let angleL x = sepL (tagPunctuation "<") ^^ x ^^ rightL (tagPunctuation ">")
-    let braceL x = leftL (tagPunctuation "{") ^^ x ^^ rightL (tagPunctuation "}")
+    let angleL x = sepL Literals.leftAngle ^^ x ^^ rightL Literals.rightAngle
+    let braceL x = leftL Literals.leftBrace  ^^ x ^^ rightL Literals.rightBrace
     let boolL = function true -> wordL (tagKeyword "true") | false -> wordL (tagKeyword "false")
 
-    let intL (n:int)          = wordL (tagNumber (string n ))
-    let int64L (n:int64)          = wordL (tagNumber (string n ))
+    let intL (n:int)          = wordL (tagNumericLiteral (string n ))
+    let int64L (n:int64)          = wordL (tagNumericLiteral (string n ))
 
     let jlistL xL xmap = QueueList.foldBack (fun x z -> z @@ xL x) xmap emptyL
 

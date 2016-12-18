@@ -602,20 +602,20 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
 #if DEBUG
 let rec layoutPat pat = 
     match pat with
-    | TPat_query (_,pat,_) -> Layout.(--) (Layout.wordL (Layout.tagText "query")) (layoutPat pat)
-    | TPat_wild _ -> Layout.wordL (Layout.tagText "wild")
-    | TPat_as _ -> Layout.wordL (Layout.tagText "var")
+    | TPat_query (_,pat,_) -> Layout.(--) (Layout.wordL (Layout.TaggedTextOps.tagText "query")) (layoutPat pat)
+    | TPat_wild _ -> Layout.wordL (Layout.TaggedTextOps.tagText "wild")
+    | TPat_as _ -> Layout.wordL (Layout.TaggedTextOps.tagText "var")
     | TPat_tuple (_, pats, _, _) 
     | TPat_array (pats, _, _) -> Layout.bracketL (Layout.tupleL (List.map layoutPat pats))
-    | _ -> Layout.wordL (Layout.tagText "?")
+    | _ -> Layout.wordL (Layout.TaggedTextOps.tagText "?")
   
-let layoutPath _p = Layout.wordL (Layout.tagText "<path>")
+let layoutPath _p = Layout.wordL (Layout.TaggedTextOps.tagText "<path>")
      
 let layoutActive (Active (path, _subexpr, pat)) =
-    Layout.(--) (Layout.wordL (Layout.tagText "Active")) (Layout.tupleL [layoutPath path; layoutPat pat]) 
+    Layout.(--) (Layout.wordL (Layout.TaggedTextOps.tagText "Active")) (Layout.tupleL [layoutPath path; layoutPat pat]) 
      
 let layoutFrontier (Frontier (i,actives,_)) =
-    Layout.(--) (Layout.wordL (Layout.tagText "Frontier ")) (Layout.tupleL [intL i; Layout.listL layoutActive actives]) 
+    Layout.(--) (Layout.wordL (Layout.TaggedTextOps.tagText "Frontier ")) (Layout.tupleL [intL i; Layout.listL layoutActive actives]) 
 #endif
 
 let mkFrontiers investigations i = 
