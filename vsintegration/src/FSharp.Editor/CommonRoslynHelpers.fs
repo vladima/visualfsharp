@@ -8,6 +8,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 open Microsoft.FSharp.Compiler.Range
@@ -34,11 +35,11 @@ module internal CommonRoslynHelpers =
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
 
-    let FSharpDocToTaggedTextList fsd : System.Collections.Generic.IList<TaggedText> = 
+    let FSharpDocToTaggedTextList fsd : System.Collections.Generic.IList<_> = 
         match fsd with
         | FSharpXmlDoc.None -> upcast Array.Empty<_>()
         | FSharpXmlDoc.XmlDocFileSignature(_file, _signature) -> upcast Array.Empty<_>()
-        | FSharpXmlDoc.Text(_rawXml) -> upcast Array.Empty<_>()
+        | FSharpXmlDoc.Text(_rawXml) -> upcast [| TaggedText(TextTags.Text, "")  |]
 
     let LayoutToTaggedTextList l : System.Collections.Generic.IList<_> =
         let ls = Layout.renderL Layout.taggedTextListR l
@@ -46,17 +47,42 @@ module internal CommonRoslynHelpers =
         else
         let result = ResizeArray()
         for t in ls do
-            let tagged = 
+            let taggedText = 
                 match t with
-                | Layout.TaggedText.Comment t -> TaggedText(TextTags.Text, t)
-                | Layout.TaggedText.Identifier t -> TaggedText(TextTags.Parameter, t) // TODO
-                | Layout.TaggedText.String t -> TaggedText(TextTags.StringLiteral, t)
-                | Layout.TaggedText.Keyword t -> TaggedText(TextTags.Keyword, t)
-                | Layout.TaggedText.Number t -> TaggedText(TextTags.NumericLiteral, t)
-                | Layout.TaggedText.Punctuation t -> TaggedText(TextTags.Punctuation, t)
-                | Layout.TaggedText.Text t -> TaggedText(TextTags.Text, t)
-                | Layout.TaggedText.Type t -> TaggedText(TextTags.Class, t) // TODO
-            result.Add(tagged)
+                | TaggedText.ActivePatternCase t
+                | TaggedText.ActivePatternResult t -> TaggedText(TextTags.Enum, t)
+                | TaggedText.Alias t -> TaggedText(TextTags.Alias, t) 
+                | TaggedText.Class t -> TaggedText(TextTags.Class, t)
+                | TaggedText.Delegate t -> TaggedText(TextTags.Delegate, t)
+                | TaggedText.Enum t -> TaggedText(TextTags.Enum, t)
+                | TaggedText.Event t -> TaggedText(TextTags.Event, t)
+                | TaggedText.Field t -> TaggedText(TextTags.Field, t)
+                | TaggedText.Interface t -> TaggedText(TextTags.Interface, t)
+                | TaggedText.Keyword t -> TaggedText(TextTags.Keyword, t)
+                | TaggedText.LineBreak t -> TaggedText(TextTags.LineBreak, t)
+                | TaggedText.Local t -> TaggedText(TextTags.Local, t)
+                | TaggedText.Member t -> TaggedText(TextTags.Property, t)
+                | TaggedText.Method t -> TaggedText(TextTags.Method, t)
+                | TaggedText.Module t -> TaggedText(TextTags.Module, t)
+                | TaggedText.ModuleBinding t -> TaggedText(TextTags.Property, t)
+                | TaggedText.Namespace t -> TaggedText(TextTags.Namespace, t)
+                | TaggedText.NumericLiteral t -> TaggedText(TextTags.NumericLiteral, t)
+                | TaggedText.Operator t -> TaggedText(TextTags.Operator, t)
+                | TaggedText.Parameter t -> TaggedText(TextTags.Parameter, t)
+                | TaggedText.Property t -> TaggedText(TextTags.Property, t)
+                | TaggedText.Punctuation t -> TaggedText(TextTags.Punctuation, t)
+                | TaggedText.Record t -> TaggedText(TextTags.Class, t)
+                | TaggedText.RecordField t -> TaggedText(TextTags.Property, t)
+                | TaggedText.Space t -> TaggedText(TextTags.Space, t)
+                | TaggedText.StringLiteral t -> TaggedText(TextTags.StringLiteral, t)
+                | TaggedText.Struct t -> TaggedText(TextTags.Struct, t)
+                | TaggedText.Text t -> TaggedText(TextTags.Text, t)
+                | TaggedText.TypeParameter t -> TaggedText(TextTags.TypeParameter, t)
+                | TaggedText.Union t -> TaggedText(TextTags.Class, t)
+                | TaggedText.UnionCase t -> TaggedText(TextTags.Property, t)
+                | TaggedText.UnknownEntity t -> TaggedText(TextTags.Property, t)
+                | TaggedText.UnknownType t -> TaggedText(TextTags.Class, t)
+            result.Add(taggedText)
         upcast result
 
     let StartAsyncAsTask cancellationToken computation =

@@ -123,6 +123,7 @@ type internal FSharpQuickInfoProvider
                             let text, xml = 
                                 toolTipElements 
                                 |> List.map (function
+                                    | FSharpToolTipElement.Group([l, xml])
                                     | FSharpToolTipElement.Single (l, xml) -> 
                                         CommonRoslynHelpers.LayoutToTaggedTextList l,
                                         CommonRoslynHelpers.FSharpDocToTaggedTextList xml
