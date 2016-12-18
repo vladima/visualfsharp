@@ -990,7 +990,7 @@ module internal ItemDescriptionsImpl =
 
 
     // Format the return type of an item
-    let rec FormatItemReturnTypeToBuffer (infoReader:InfoReader) m denv os d = 
+    let rec FormatItemReturnTypeAsLayout (infoReader:InfoReader) m denv d = 
         let isDecl = false
         let g = infoReader.g
         let amap = infoReader.amap
@@ -1003,15 +1003,16 @@ module internal ItemDescriptionsImpl =
               let dtau,rtau = destFunTy g tau
               let ptausL,tpcsL = NicePrint.layoutPrettifiedTypes denv [dtau;rtau]
               let _,prtauL = List.frontAndBack ptausL
-              bprintf os ": "
-              bufferL os prtauL
-              bprintf os " "
-              bufferL os tpcsL
+              RightL.colon ^^ prtauL ^^ wordL Literals.space ^^ tpcsL
+              //bprintf os ": "
+              //bufferL os prtauL
+              //bprintf os " "
+              //bufferL os tpcsL
             else
-              bufferL os (NicePrint.layoutPrettifiedTypeAndConstraints denv [] tau) 
+              NicePrint.layoutPrettifiedTypeAndConstraints denv [] tau
         | Item.UnionCase(ucinfo,_) -> 
             let rty = generalizedTyconRef ucinfo.TyconRef
-            NicePrint.outputTy denv os rty
+            NicePrint.layoutTy denv rty
         | Item.ActivePatternCase(apref) -> 
             let v = apref.ActivePatternVal
             let _, tau = v.TypeScheme
@@ -1021,31 +1022,30 @@ module internal ItemDescriptionsImpl =
             let aparity = apnames.Length
             
             let rty = if aparity <= 1 then res else List.item apref.CaseIndex (argsOfAppTy g res)
-            NicePrint.outputTy denv os rty
+            NicePrint.layoutTy denv rty
         | Item.ExnCase _ -> 
-            bufferL os (NicePrint.layoutPrettifiedTypeAndConstraints denv [] g.exn_ty) 
+            NicePrint.layoutPrettifiedTypeAndConstraints denv [] g.exn_ty
         | Item.RecdField(rfinfo) ->
-            bufferL os (NicePrint.layoutPrettifiedTypeAndConstraints denv [] rfinfo.FieldType);
+            NicePrint.layoutPrettifiedTypeAndConstraints denv [] rfinfo.FieldType
         | Item.ILField(finfo) ->
-            bufferL os (NicePrint.layoutPrettifiedTypeAndConstraints denv [] (finfo.FieldType(amap,m)))
+            NicePrint.layoutPrettifiedTypeAndConstraints denv [] (finfo.FieldType(amap,m))
         | Item.Event(einfo) ->
-            bufferL os (NicePrint.layoutPrettifiedTypeAndConstraints denv [] (PropTypOfEventInfo infoReader m AccessibleFromSomewhere einfo))
+            NicePrint.layoutPrettifiedTypeAndConstraints denv [] (PropTypOfEventInfo infoReader m AccessibleFromSomewhere einfo)
         | Item.Property(_,pinfos) -> 
             let pinfo = List.head pinfos
             let rty = pinfo.GetPropertyType(amap,m) 
-            let layout = (NicePrint.layoutPrettifiedTypeAndConstraints denv [] rty)
-            bufferL os layout
+            NicePrint.layoutPrettifiedTypeAndConstraints denv [] rty
         | Item.CustomOperation (_,_,Some minfo)
         | Item.MethodGroup(_,(minfo :: _),_) 
         | Item.CtorGroup(_,(minfo :: _)) -> 
             let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
-            bufferL os (NicePrint.layoutPrettifiedTypeAndConstraints denv [] rty) 
+            NicePrint.layoutPrettifiedTypeAndConstraints denv [] rty
         | Item.FakeInterfaceCtor typ 
         | Item.DelegateCtor typ -> 
-           bufferL os (NicePrint.layoutPrettifiedTypeAndConstraints denv [] typ) 
-        | Item.TypeVar _ -> ()
+           NicePrint.layoutPrettifiedTypeAndConstraints denv [] typ
+        | Item.TypeVar _ -> emptyL
             
-        | _ -> ()
+        | _ -> emptyL
 
     let rec GetF1Keyword d : string option = 
         let rec unwindTypeAbbrev (tcref : TyconRef) =
@@ -1214,7 +1214,7 @@ module internal ItemDescriptionsImpl =
             (fun err -> FSharpToolTipElement.CompositionError(err))
         
     let FormatReturnTypeOfItem (infoReader:InfoReader) m denv d = 
-        ErrorScope.Protect m (fun () -> bufs (fun buf -> FormatItemReturnTypeToBuffer infoReader m denv buf d)) (fun err -> err)
+        ErrorScope.Protect m (fun () -> bufs (fun buf -> FormatItemReturnTypeAsLayout infoReader m denv buf d)) (fun err -> err)
 
     // Compute the index of the VS glyph shown with an item in the Intellisense menu
     let GlyphOfItem(denv,d) = 
