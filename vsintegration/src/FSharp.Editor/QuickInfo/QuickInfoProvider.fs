@@ -33,6 +33,7 @@ open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.VisualStudio.Text.Formatting
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.Language.Intellisense
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Parser
@@ -65,7 +66,8 @@ type internal FSharpQuickInfoProvider
         _classificationFormatMapService: IClassificationFormatMapService,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager,
-        typeMap: Shared.Utilities.ClassificationTypeMap
+        typeMap: Shared.Utilities.ClassificationTypeMap,
+        glyphService: IGlyphService
     ) =
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
@@ -96,10 +98,14 @@ type internal FSharpQuickInfoProvider
             match quickParseInfo with 
             | Some (islandColumn, qualifiers, textSpan) -> 
                 let! res = checkFileResults.GetToolTipTextAlternate(textLineNumber, islandColumn, textLine.ToString(), qualifiers, FSharpTokenTag.IDENT)
-                return 
-                    match res with
-                    | FSharpToolTipText [] -> None
-                    | _ -> Some(res, textSpan)
+                match res with
+                | FSharpToolTipText [] -> return None
+                | _ -> 
+                    let! symbolUse = checkFileResults.GetSymbolUseAtLocation(textLineNumber, islandColumn, textLine.ToString(), qualifiers)
+                    match symbolUse with
+                    | Some symbolUse ->
+                        return Some(res, textSpan, symbolUse.Symbol)
+                    | None -> return None
             | None -> return None
         }
     
@@ -118,7 +124,7 @@ type internal FSharpQuickInfoProvider
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                         let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode(), cancellationToken)
                         match quickInfoResult with
-                        | Some(toolTipElement, textSpan) ->
+                        | Some(toolTipElement, textSpan, symbol) ->
                             let mainDescription = Collections.Generic.List()
                             let documentation = Collections.Generic.List()
                             XmlDocumentation.BuildDataTipText(
@@ -130,7 +136,7 @@ type internal FSharpQuickInfoProvider
                             let content = 
                                 QuickInfoDisplayDeferredContent
                                     (
-                                        symbolGlyph = null,//SymbolGlyphDeferredContent(),
+                                        symbolGlyph = SymbolGlyphDeferredContent(Glyph.forSymbol symbol, glyphService),
                                         warningGlyph = null,
                                         mainDescription = ClassifiableDeferredContent(mainDescription, typeMap),
                                         documentation = ClassifiableDeferredContent(documentation, typeMap),
