@@ -27,7 +27,7 @@ type internal FSharpMethodGroupItemParameter =
 
     /// The text to display for the parameter including its name, its type and visual indicators of other
     /// information such as whether it is optional.
-    member Display: string
+    member Display: Layout
 
     /// Is the parameter optional
     member IsOptional: bool
@@ -44,7 +44,7 @@ type internal FSharpMethodGroupItem =
     member Description : FSharpToolTipText<Layout>
 
     /// The formatted type text for the method (or other item)
-    member TypeText: string
+    member TypeText: Layout
 
     /// The parameters of the method in the overload set
     member Parameters: FSharpMethodGroupItemParameter[]

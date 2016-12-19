@@ -1214,7 +1214,7 @@ module internal ItemDescriptionsImpl =
             (fun err -> FSharpToolTipElement.CompositionError(err))
         
     let FormatReturnTypeOfItem (infoReader:InfoReader) m denv d = 
-        ErrorScope.Protect m (fun () -> bufs (fun buf -> FormatItemReturnTypeAsLayout infoReader m denv buf d)) (fun err -> err)
+        ErrorScope.Protect m (fun () -> FormatItemReturnTypeAsLayout infoReader m denv d) (fun err -> wordL (tagText err))
 
     // Compute the index of the VS glyph shown with an item in the Intellisense menu
     let GlyphOfItem(denv,d) = 

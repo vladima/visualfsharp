@@ -69,7 +69,7 @@ type internal FSharpQuickInfoProvider
     ) =
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
-    let _documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
+    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     
     static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int, cancellationToken: CancellationToken) =
         async {
@@ -118,25 +118,22 @@ type internal FSharpQuickInfoProvider
                         let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
                         let! quickInfoResult = FSharpQuickInfoProvider.ProvideQuickInfo(checkerProvider.Checker, document.Id, sourceText, document.FilePath, position, options, textVersion.GetHashCode(), cancellationToken)
                         match quickInfoResult with
-                        | Some(FSharpToolTipText(toolTipElements), textSpan) ->
-                            //let dataTipText = XmlDocumentation.BuildDataTipText(documentationBuilder, toolTipElement)
-                            let text, xml = 
-                                toolTipElements 
-                                |> List.map (function
-                                    | FSharpToolTipElement.Group([l, xml])
-                                    | FSharpToolTipElement.Single (l, xml) -> 
-                                        CommonRoslynHelpers.LayoutToTaggedTextList l,
-                                        CommonRoslynHelpers.FSharpDocToTaggedTextList xml
-                                    | _ -> upcast Array.empty, upcast Array.empty)
-                                |> List.head
+                        | Some(toolTipElement, textSpan) ->
+                            let mainDescription = Collections.Generic.List()
+                            let documentation = Collections.Generic.List()
+                            XmlDocumentation.BuildDataTipText(
+                                documentationBuilder, 
+                                CommonRoslynHelpers.CollectTaggedText mainDescription, 
+                                CommonRoslynHelpers.CollectTaggedText documentation, 
+                                toolTipElement)
                             let empty = ClassifiableDeferredContent(Array.Empty<TaggedText>(), typeMap);
                             let content = 
                                 QuickInfoDisplayDeferredContent
                                     (
                                         symbolGlyph = null,//SymbolGlyphDeferredContent(),
                                         warningGlyph = null,
-                                        mainDescription = ClassifiableDeferredContent(text, typeMap),
-                                        documentation = ClassifiableDeferredContent(xml, typeMap),
+                                        mainDescription = ClassifiableDeferredContent(mainDescription, typeMap),
+                                        documentation = ClassifiableDeferredContent(documentation, typeMap),
                                         typeParameterMap = empty,
                                         anonymousTypes = empty,
                                         usageText = empty,

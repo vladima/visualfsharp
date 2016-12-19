@@ -3,6 +3,7 @@
 module internal Microsoft.FSharp.Compiler.Layout
 
 open System
+open System.Collections.Generic
 open System.IO
 open Internal.Utilities.StructuredFormat
 open Microsoft.FSharp.Core.Printf
@@ -319,7 +320,7 @@ let renderL (rr: LayoutRenderer<_,_>) layout =
       | Node (_,l,jm,r,_,_)             -> 
           addL z pos i l <|
             fun (z, i) ->
-              let z,i = if jm then z,i else rr.AddText z (TaggedText.Text " "),i+1 
+              let z,i = if jm then z,i else rr.AddText z Literals.space, i+1 
               let pos = i 
               addL z pos i r k
       | Attr (tag,attrs,l)                -> 
@@ -342,18 +343,18 @@ let stringR =
       member x.AddTag z (_,_,_) = z
       member x.Finish rstrs = String.Join("",Array.ofList (List.rev rstrs)) }
 
-/// string render 
-let taggedTextListR =
-  { new LayoutRenderer<list<TaggedText>, list<TaggedText>> with 
-      member x.Start () = []
-      member x.AddText rstrs text =  text::rstrs
-      member x.AddBreak rstrs n = TaggedText.Space (spaces n) :: Literals.lineBreak ::  rstrs 
-      member x.AddTag z (_,_,_) = z
-      member x.Finish rstrs = List.rev rstrs }
-
-
 type NoState = NoState
 type NoResult = NoResult
+
+/// string render 
+let taggedTextListR collector =
+  { new LayoutRenderer<NoResult, NoState> with 
+      member x.Start () = NoState
+      member x.AddText z text = collector text; z
+      member x.AddBreak rstrs n = collector (tagSpace(spaces n)); collector Literals.lineBreak; rstrs 
+      member x.AddTag z (_,_,_) = z
+      member x.Finish rstrs = NoResult }
+
 
 /// channel LayoutRenderer
 let channelR (chan:TextWriter) =

@@ -3,6 +3,7 @@
 module internal Microsoft.FSharp.Compiler.Layout
 
 open System.Text
+open System.Collections.Generic
 open System.IO
 open Internal.Utilities.StructuredFormat
 open Internal.Utilities.StructuredFormat.TaggedTextOps
@@ -140,5 +141,5 @@ val renderL  : LayoutRenderer<'b,'a> -> Layout -> 'b
 val stringR  : LayoutRenderer<string,string list>
 val channelR : TextWriter -> LayoutRenderer<NoResult,NoState>
 val bufferR  : StringBuilder -> LayoutRenderer<NoResult,NoState>
-val taggedTextListR  : LayoutRenderer<list<TaggedText>, list<TaggedText>>
+val taggedTextListR  : collector: (TaggedText -> unit) -> LayoutRenderer<NoResult, NoState>
 

@@ -102,7 +102,7 @@ module internal ItemDescriptionsImpl =
     val GetXmlDocSigOfEvent : InfoReader -> range -> EventInfo -> (string option * string) option
     val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc
     val FormatDescriptionOfItem : bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpToolTipElement<Layout>
-    val FormatReturnTypeOfItem  : InfoReader -> range -> DisplayEnv -> Item -> string
+    val FormatReturnTypeOfItem  : InfoReader -> range -> DisplayEnv -> Item -> Layout
     val RemoveDuplicateItems : TcGlobals -> Item list -> Item list
     val RemoveExplicitlySuppressed : TcGlobals -> Item list -> Item list
     val GetF1Keyword : Item -> string option

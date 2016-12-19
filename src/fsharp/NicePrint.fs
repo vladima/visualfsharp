@@ -1906,6 +1906,7 @@ let stringOfMethInfo amap m denv d = bufs (fun buf -> InfoMemberPrinting.formatM
 
 /// Convert a ParamData to a string
 let stringOfParamData denv paramData = bufs (fun buf -> InfoMemberPrinting.formatParamDataToBuffer denv buf paramData)
+let layoutOfParamData denv paramData = InfoMemberPrinting.layoutParamData denv paramData
 let outputILTypeRef         denv os x = x |> PrintIL.layoutILTypeRef denv |> bufferL os
 let layoutILTypeRef         denv x = x |> PrintIL.layoutILTypeRef denv
 let outputExnDef            denv os x = x |> TastDefinitionPrinting.layoutExnDefn denv |> bufferL os
@@ -1920,6 +1921,7 @@ let isGeneratedUnionCaseField pos f     = TastDefinitionPrinting.isGeneratedUnio
 let isGeneratedExceptionField pos f     = TastDefinitionPrinting.isGeneratedExceptionField pos f
 let stringOfTyparConstraint denv tpc  = stringOfTyparConstraints denv [tpc]
 let stringOfTy              denv x    = x |> PrintTypes.layoutType denv |> showL
+let prettyLayoutOfTy        denv x    = x |> PrintTypes.layoutPrettyType denv
 let prettyStringOfTy        denv x    = x |> PrintTypes.layoutPrettyType denv |> showL
 let prettyStringOfTyNoCx    denv x    = x |> PrintTypes.layoutPrettyTypeNoCx denv |> showL
 let stringOfRecdField       denv x    = x |> TastDefinitionPrinting.layoutRecdField false denv |> showL
