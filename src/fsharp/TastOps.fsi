@@ -1435,6 +1435,7 @@ val DetectAndOptimizeForExpression : TcGlobals -> OptimizeForExpressionOptions -
 
 val TryEliminateDesugaredConstants : TcGlobals -> range -> Const -> Expr option
 
+val MemberIsExplicitImpl : TcGlobals -> ValMemberInfo -> bool
 val ValIsExplicitImpl : TcGlobals -> Val -> bool
 val ValRefIsExplicitImpl : TcGlobals -> ValRef -> bool
 
