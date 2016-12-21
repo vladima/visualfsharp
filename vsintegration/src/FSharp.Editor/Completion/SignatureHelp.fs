@@ -229,7 +229,7 @@ type internal FSharpSignatureHelpProvider
             let prefixParts = 
                 [| TaggedText(TextTags.Method, methodGroup.MethodName);  
                    TaggedText(TextTags.Punctuation, (if isStaticArgTip then "<" else "(")) |]
-            let separatorParts = [| TaggedText(TextTags.Punctuation, ",") |]
+            let separatorParts = [| TaggedText(TextTags.Punctuation, ","); TaggedText(TextTags.Space, " ") |]
             let suffixParts = [| TaggedText(TextTags.Punctuation, (if isStaticArgTip then ">" else ")")) |]
 
             let completionItem = (method.HasParamArrayArg, documentation, prefixParts, separatorParts, suffixParts, parameters, mainDescription)
@@ -270,7 +270,7 @@ type internal FSharpSignatureHelpProvider
                                     let parameters = parameters 
                                                      |> Array.map (fun (paramName, isOptional, paramDoc, displayParts) -> 
                                                         SignatureHelpParameter(paramName,isOptional,documentationFactory=(fun _ -> paramDoc :> seq<_>),displayParts=displayParts))
-                                    SignatureHelpItem(isVariadic=hasParamArrayArg ,documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts))
+                                    SignatureHelpItem(isVariadic=hasParamArrayArg, documentationFactory=(fun _ -> doc :> seq<_>),prefixParts=prefixParts,separatorParts=separatorParts,suffixParts=suffixParts,parameters=parameters,descriptionParts=descriptionParts))
 
                         return SignatureHelpItems(items,applicableSpan,argumentIndex,argumentCount,Option.toObj argumentName)
                 | None -> 
