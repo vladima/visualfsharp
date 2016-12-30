@@ -700,11 +700,11 @@ module private PrintTypes =
         | ILAttribElem.Array (_, xs)     -> 
              leftL (tagPunctuation "[|") ^^ semiListL (List.map (layoutILAttribElement denv) xs) ^^ rightL (tagPunctuation "|]")
         | ILAttribElem.Type (Some ty)    -> 
-            leftL (tagKeyword "typeof") ^^ (wordL (tagPunctuation "<")) ^^ PrintIL.layoutILType denv [] ty ^^ rightL (tagPunctuation ">")
+            leftL (tagKeyword "typeof") ^^ SepL.leftAngle ^^ PrintIL.layoutILType denv [] ty ^^ RightL.rightAngle
         | ILAttribElem.Type None        -> wordL (tagText "")
         | ILAttribElem.TypeRef (Some ty) -> 
-            leftL (tagKeyword "typedefof") ^^ wordL (tagPunctuation "<") ^^ PrintIL.layoutILTypeRef denv ty ^^ rightL (tagPunctuation ">")
-        | ILAttribElem.TypeRef None     -> wordL (tagText "")
+            leftL (tagKeyword "typedefof") ^^ SepL.leftAngle ^^ PrintIL.layoutILTypeRef denv ty ^^ RightL.rightAngle
+        | ILAttribElem.TypeRef None     -> emptyL
 
     and layoutILAttrib denv (ty, args) = 
         let argsL = bracketL (sepListL (rightL (tagPunctuation ",")) (List.map (layoutILAttribElement denv) args))
