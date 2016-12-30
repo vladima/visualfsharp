@@ -881,9 +881,9 @@ module internal ItemDescriptionsImpl =
                     | None ->
                         let argTys = ParamNameAndTypesOfUnaryCustomOperation g minfo |> List.map (fun (ParamNameAndType(_,ty)) -> ty)
                         let _, argTys, _ = PrettyTypes.PrettifyTypesN g argTys 
-                        wordL (tagMethod customOpName) ^^ LeftL.leftParen ^^ sepListL SepL.comma (List.map (NicePrint.layoutTy denv) argTys) ^^ RightL.rightParen
+                        wordL (tagMethod customOpName) ^^ sepListL SepL.space (List.map (fun ty -> LeftL.leftParen ^^ NicePrint.layoutTy denv ty ^^ SepL.rightParen) argTys)
                 ) ^^
-                sepL Literals.lineBreak ^^ sepL Literals.lineBreak  ^^
+                SepL.lineBreak ^^ SepL.lineBreak  ^^
                 wordL (tagText (FSComp.SR.typeInfoCallsWord())) ^^
                 NicePrint.layoutTyconRef denv (tcrefOfAppTy g minfo.EnclosingType) ^^
                 SepL.dot ^^

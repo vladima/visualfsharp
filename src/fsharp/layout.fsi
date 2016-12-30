@@ -115,6 +115,7 @@ module SepL =
     val leftBracket: Layout
     val leftAngle: Layout
     val lineBreak: Layout
+    val rightParen: Layout
 
 module WordL =
     val arrow: Layout

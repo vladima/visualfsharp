@@ -124,6 +124,7 @@ module SepL =
     let leftBracket = sepL Literals.leftBracket
     let leftAngle = sepL Literals.leftAngle
     let lineBreak = sepL Literals.lineBreak
+    let rightParen = sepL Literals.rightParen
 
 module WordL =
     let arrow = wordL Literals.arrow
