@@ -120,11 +120,13 @@ module SepL =
     let questionMark = sepL Literals.questionMark
     let leftParen = sepL Literals.leftParen
     let comma = sepL Literals.comma
+    let space = sepL Literals.space
 
 module WordL =
     let arrow = wordL Literals.arrow
     let star = wordL Literals.star
     let colon = wordL Literals.colon
+    let equals = wordL Literals.equals
 
 module LeftL =
     let leftParen = leftL Literals.leftParen

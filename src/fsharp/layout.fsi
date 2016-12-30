@@ -111,11 +111,13 @@ module SepL =
     val questionMark: Layout
     val leftParen: Layout
     val comma: Layout
+    val space: Layout
 
 module WordL =
     val arrow: Layout
     val star: Layout
     val colon: Layout
+    val equals: Layout
 
 module LeftL =
     val leftParen: Layout

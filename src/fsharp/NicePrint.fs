@@ -309,7 +309,7 @@ module private PrintIL =
             |   None,None 
             |   Some _, None -> emptyL
             |   None, Some _ -> wordL (tagKeyword "with") ^^ wordL (tagKeyword "set")
-            |   Some _, Some _ -> wordL (tagKeyword "with") ^^ wordL (tagKeyword "get") ^^ SepL.comma ^^ wordL (tagKeyword "set")
+            |   Some _, Some _ -> wordL (tagKeyword "with") ^^ wordL (tagKeyword "get") ^^ RightL.comma ^^ wordL (tagKeyword "set")
         staticL ^^ wordL (tagKeyword "member") ^^ nameL ^^ WordL.colon ^^ typL ^^ specGetSetL
 
     let layoutILFieldInit x =
@@ -985,7 +985,7 @@ module private PrintTypes =
                             layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL (tagParameter id.idText)
                         else
                             leftL (tagParameter id.idText)
-                    prefix ^^ RightL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty
+                    prefix ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty
                         
             let delimitReturnValue = tagPunctuation (if denv.useColonForReturnType then ":" else "->")
 
