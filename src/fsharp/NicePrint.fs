@@ -1243,14 +1243,14 @@ module InfoMemberPrinting =
             else emptyL
         let layout = 
             layout ^^ 
+            (
                 if minfo.IsConstructor then
-                    wordL (tagKeyword "new") ^^
-                    WordL.colon ^^
-                    wordL (tagPunctuation ":")
+                    wordL (tagKeyword "new")
                 else
                     wordL (tagKeyword "member") ^^
-                    PrintTypes.layoutTyparDecls denv (wordL (tagMethod minfo.LogicalName)) true minfo.FormalMethodTypars ^^
-                    WordL.colon
+                    PrintTypes.layoutTyparDecls denv (wordL (tagMethod minfo.LogicalName)) true minfo.FormalMethodTypars
+            ) ^^
+            WordL.colon
         let paramDatas = minfo.GetParamDatas(amap, m, minst)
         let layout =
             layout ^^
