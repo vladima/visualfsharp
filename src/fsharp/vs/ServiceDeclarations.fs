@@ -761,8 +761,7 @@ module internal ItemDescriptionsImpl =
                 sepL (tagPunctuation ".") ^^
                 wordL (tagUnionCase (DecompileOpName uc.Id.idText)) ^^
                 RightL.colon ^^
-                (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv recd) ^^
-                WordL.arrow ^^
+                (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv recd ^^ WordL.arrow) ^^
                 NicePrint.layoutTy denv rty
             FSharpStructuredToolTipElement.Single(layout, xml)
 
@@ -952,10 +951,10 @@ module internal ItemDescriptionsImpl =
                     layout ^^
                     (
                         if not (List.isEmpty namesToAdd) then
-                            wordL Literals.lineBreak ^^
+                            SepL.lineBreak ^^
                             List.fold ( fun s (i, txt) ->
                                 s ^^
-                                wordL Literals.lineBreak ^^
+                                SepL.lineBreak ^^
                                 wordL (tagText ((if i = 0 then FSComp.SR.typeInfoFromFirst else FSComp.SR.typeInfoFromNext) txt))
                             ) emptyL namesToAdd 
                         else 

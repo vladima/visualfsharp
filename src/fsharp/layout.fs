@@ -121,6 +121,9 @@ module SepL =
     let leftParen = sepL Literals.leftParen
     let comma = sepL Literals.comma
     let space = sepL Literals.space
+    let leftBracket = sepL Literals.leftBracket
+    let leftAngle = sepL Literals.leftAngle
+    let lineBreak = sepL Literals.lineBreak
 
 module WordL =
     let arrow = wordL Literals.arrow
@@ -130,11 +133,15 @@ module WordL =
 
 module LeftL =
     let leftParen = leftL Literals.leftParen
+    let questionMark = leftL Literals.questionMark
+    let colon = leftL Literals.colon
 
 module RightL =
     let comma = rightL Literals.comma
     let rightParen = rightL Literals.rightParen
     let colon = rightL Literals.colon
+    let rightBracket = rightL Literals.rightBracket
+    let rightAngle = rightL Literals.rightAngle
 
 let aboveL  l r = mkNode l r (Broken 0)
 

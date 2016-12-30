@@ -112,6 +112,9 @@ module SepL =
     val leftParen: Layout
     val comma: Layout
     val space: Layout
+    val leftBracket: Layout
+    val leftAngle: Layout
+    val lineBreak: Layout
 
 module WordL =
     val arrow: Layout
@@ -121,11 +124,15 @@ module WordL =
 
 module LeftL =
     val leftParen: Layout
+    val questionMark: Layout
+    val colon: Layout
 
 module RightL =
     val comma: Layout
     val rightParen: Layout
     val colon: Layout
+    val rightBracket: Layout
+    val rightAngle: Layout
 
 /// render a Layout yielding an 'a using a 'b (hidden state) type 
 type LayoutRenderer<'a,'b> =

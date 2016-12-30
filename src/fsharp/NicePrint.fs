@@ -156,7 +156,7 @@ module private PrintIL =
         e.RemoveMethod.CallingSignature.CallingConv.IsStatic
 
     let private layoutILArrayShape (ILArrayShape sh) = 
-        sepL (tagPunctuation "[") ^^ wordL (tagPunctuation (sh |> List.tail |> List.map (fun _ -> ",") |> String.concat "")) ^^ rightL (tagPunctuation "]") // drop off one "," so that a n-dimensional array has n - 1 ","'s
+        SepL.leftBracket ^^ wordL (tagPunctuation (sh |> List.tail |> List.map (fun _ -> ",") |> String.concat "")) ^^ RightL.rightBracket // drop off one "," so that a n-dimensional array has n - 1 ","'s
 
     let private  layoutILGenericParameterDefs (ps: ILGenericParameterDefs) = 
         ps |> List.map (fun x -> "'" + x.Name |> (tagTypeParameter >> wordL))
@@ -166,7 +166,7 @@ module private PrintIL =
         | [] -> emptyL
         | _  -> 
             let body = Layout.commaListL ps
-            sepL Literals.leftAngle ^^ body ^^ rightL Literals.rightAngle
+            SepL.leftAngle ^^ body ^^ RightL.rightAngle
 
     let private pruneParms (className: string) (ilTyparSubst: layout list) =
         let numParms = 
@@ -213,13 +213,13 @@ module private PrintIL =
             let isParamArray = TryFindILAttribute denv.g.attrib_ParamArrayAttribute p.CustomAttrs
             match isParamArray, p.Name, p.IsOptional with 
             // Layout an optional argument 
-            | _, Some nm, true -> leftL (tagPunctuation "?") ^^  sepL (tagParameter nm) ^^ RightL.colon
+            | _, Some nm, true -> LeftL.questionMark ^^  sepL (tagParameter nm) ^^ SepL.colon
             // Layout an unnamed argument 
-            | _, None, _ -> leftL (tagPunctuation ":")
+            | _, None, _ -> LeftL.colon
             // Layout a named argument 
             | true, Some nm,_ ->      
-                layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ wordL (tagParameter nm) ^^ RightL.colon
-            | false, Some nm,_ -> leftL (tagParameter nm) ^^ RightL.colon
+                layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ wordL (tagParameter nm) ^^ SepL.colon
+            | false, Some nm,_ -> leftL (tagParameter nm) ^^ SepL.colon
         preL ^^ (layoutILType denv ilTyparSubst p.Type)
        
 
@@ -276,7 +276,7 @@ module private PrintIL =
             match e.Type with
             | Some t -> layoutILType denv ilTyparSubst t
             | _ -> emptyL
-        staticL ^^ wordL (tagKeyword "event") ^^ nameL ^^ wordL (tagPunctuation ":") ^^ typL     
+        staticL ^^ wordL (tagKeyword "event") ^^ nameL ^^ WordL.colon ^^ typL     
        
     let private layoutILPropertyDef denv ilTyparSubst (p : ILPropertyDef) =
         let staticL =  if p.CallingConv =  ILThisConvention.Static then wordL (tagKeyword "static") else emptyL
@@ -1283,7 +1283,7 @@ module InfoMemberPrinting =
         let layout = 
             layout ^^
                 if minfo.IsConstructor then  
-                    LeftL.leftParen
+                    SepL.leftParen
                 else
                     SepL.dot ^^
                     PrintTypes.layoutTyparDecls denv  (wordL (tagMethod minfo.LogicalName)) true minfo.FormalMethodTypars ^^
