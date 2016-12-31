@@ -832,7 +832,7 @@ module internal ItemDescriptionsImpl =
                     match finfo.LiteralValue with
                     | None -> emptyL
                     | Some v ->
-                        wordL (tagPunctuation "=") ^^
+                        WordL.equals ^^
                         try NicePrint.layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (TypeChecker.TcFieldInit m v) with _ -> emptyL
                 )
             FSharpStructuredToolTipElement.Single(layout, xml)

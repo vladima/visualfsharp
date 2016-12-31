@@ -103,6 +103,8 @@ module TaggedTextOps =
         val questionMark : TaggedText
         val colon: TaggedText
         val minus: TaggedText
+        val keywordTrue: TaggedText
+        val keywordFalse: TaggedText
 
 module SepL =
     val dot: Layout
@@ -122,11 +124,39 @@ module WordL =
     val star: Layout
     val colon: Layout
     val equals: Layout
+    val keywordNew: Layout
+    val structUnit: Layout
+    val keywordStatic: Layout
+    val keywordMember: Layout
+    val keywordVal: Layout
+    val keywordEvent: Layout
+    val keywordWith: Layout
+    val keywordSet: Layout
+    val keywordGet: Layout
+    val keywordTrue: Layout
+    val keywordFalse: Layout
+    val bar: Layout
+    val keywordStruct: Layout
+    val keywordInherit: Layout
+    val keywordEnd: Layout
+    val keywordNested: Layout
+    val keywordType: Layout
+    val keywordDelegate: Layout
+    val keywordOf: Layout
+    val keywordInternal: Layout
+    val keywordPrivate: Layout
+    val keywordAbstract: Layout
+    val keywordOverride: Layout
+    val keywordEnum: Layout
 
 module LeftL =
     val leftParen: Layout
     val questionMark: Layout
     val colon: Layout
+    val leftBracketAngle: Layout
+    val leftBracketBar: Layout
+    val keywordTypeof: Layout
+    val keywordTypedefof: Layout
 
 module RightL =
     val comma: Layout
@@ -134,6 +164,8 @@ module RightL =
     val colon: Layout
     val rightBracket: Layout
     val rightAngle: Layout
+    val rightBracketAngle: Layout
+    val rightBracketBar: Layout
 
 /// render a Layout yielding an 'a using a 'b (hidden state) type 
 type LayoutRenderer<'a,'b> =
